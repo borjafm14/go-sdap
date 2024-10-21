@@ -1,0 +1,113 @@
+syntax = "proto3";
+
+package sdap;
+
+import "google/protobuf/empty.proto";
+
+service Operation {
+    rpc Connect(SessionRequest) returns (SessionResponse) {}
+    rpc Authenticate(AuthenticateRequest) returns (AuthenticateResponse) {}
+    rpc GetCharacteristics(CharacteristicsRequest) returns (CharacteristicsResponse) {}
+    rpc GetMemberOf(MemberOfRequest) returns (MemberOfResponse) {}
+    rpc Disconnect(DisconnectRequest) returns (google.protobuf.Empty) {}
+}
+
+service Management {
+    rpc Connect(SessionRequest) returns (SessionResponse) {}
+    rpc GetUser (UserRequest) returns (User) {}
+    rpc ListUsers (ListUsersRequest) returns (ListUsersResponse) {}
+    rpc ModifyUsers(ModifyUsersRequest) returns (ModifyUsersResponse) {}
+    rpc AddUsers(AddUsersRequest) returns (AddUsersResponse) {}
+    rpc DeleteUsers(DeleteUsersRequest) returns (DeleteUsersResponse) {}
+    rpc Disconnect(DisconnectRequest) returns (google.protobuf.Empty) {}
+}
+
+message AuthenticateRequest {
+    string token = 1;
+    string username = 2;
+    string password = 3;
+}
+
+message AuthenticateResponse {
+    User user = 1;
+    Status status = 2;
+}
+
+message CharacteristicsRequest {
+    string token = 1;
+    optional string username = 2; // only for administrator/manager
+    repeated Characteristic characteristics = 3;
+}
+
+message CharacteristicsResponse {
+    User user = 1;
+    Status status = 2;
+}
+
+message MemberOfRequest {
+    string token = 1;
+    optional string username = 2; // only for administrator/manager
+}
+
+message MemberOfResponse {
+    repeated string memberOf = 1;
+    Status status = 2;
+}
+
+message DisconnectRequest {
+    string token = 1;
+}
+
+message SessionRequest {
+    string hostname = 1;
+    int32 port = 2;
+    bool secure = 3;
+}
+
+message SessionResponse {
+    string token = 1;
+    Status status = 2;
+}
+
+enum Status {
+    STATUS_OK = 1;
+    STATUS_ERROR = 2;
+}
+
+enum Characteristic {
+    COMMON_NAME = 1;
+    FIRST_NAME = 2;
+    LAST_NAME = 3;
+    EMPLOYEE_NUMBER = 4;
+    PHONE_NUMBER = 5;
+    ADDRESS = 6;
+    COMPANY_ROLE = 7;
+    TEAM = 8;
+    REPORTS_TO = 9;
+    OTHER = 10;
+    MEMBER_OF = 11;
+}
+
+enum SDAP_ROLE {
+    ADMINISTRATOR = 1;       // get, post, put, delete
+    MANAGER = 2;             // get all info of every user
+    EMPLOYEE = 3;            // get all info of themselves
+    EMPLOYEE_RESTRICTED = 4; // get basic info of themselves
+}
+
+message User {
+    string username = 1;
+    optional string password = 2;
+    optional string sdap_role = 3;
+    optional string common_name = 4;
+    optional string first_name = 5;
+    optional string last_name = 6;
+    optional string employee_number = 7;
+    optional string phone_number = 8;
+    optional string address = 9;
+    optional string company_role = 10;
+    optional string team = 11;
+    optional string reports_to = 12;
+    map<string, string> characteristics = 13;
+    repeated string member_of = 14;
+}
