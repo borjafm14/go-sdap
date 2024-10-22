@@ -14,12 +14,64 @@ service Operation {
 
 service Management {
     rpc Connect(SessionRequest) returns (SessionResponse) {}
-    rpc GetUser (UserRequest) returns (User) {}
+    rpc GetUser (UserRequest) returns (UserResponse) {}
     rpc ListUsers (ListUsersRequest) returns (ListUsersResponse) {}
     rpc ModifyUsers(ModifyUsersRequest) returns (ModifyUsersResponse) {}
     rpc AddUsers(AddUsersRequest) returns (AddUsersResponse) {}
-    rpc DeleteUsers(DeleteUsersRequest) returns (DeleteUsersResponse) {}
+    rpc DeleteUsers(DeleteUsersRequest) returns (Status) {}
     rpc Disconnect(DisconnectRequest) returns (google.protobuf.Empty) {}
+}
+
+message AddUsersRequest {
+    string token = 1;
+    repeated User users = 2;
+}
+
+message AddUsersResponse {
+    repeated User users = 1;
+    Status status = 2;
+}
+
+message DeleteUsersRequest {
+    string token = 1;
+    repeated string usernames = 2;
+}
+
+message ModifyUsersRequest {
+    string token = 1;
+    repeated string usernames = 2;
+    repeated Filter filter = 3;
+}
+
+message ModifyUsersResponse {
+    repeated User users = 1;
+    Status status = 2;
+}
+
+message ListUsersRequest {
+    string token = 1;
+    optional string username = 2;
+    repeated Filter filter = 3;
+}
+
+message Filter {
+    Characteristic characteristic = 1;
+    string value = 2;
+}
+
+message ListUsersResponse {
+    repeated User users = 1;
+    Status status = 2;
+}
+
+message UserRequest {
+    string token = 1;
+    string username = 2;
+}
+
+message UserResponse {
+    optional User user = 1;
+    Status status = 2;
 }
 
 message AuthenticateRequest {
@@ -72,6 +124,7 @@ message SessionResponse {
 enum Status {
     STATUS_OK = 1;
     STATUS_ERROR = 2;
+    STATUS_USER_NOT_FOUND = 3;
 }
 
 enum Characteristic {
