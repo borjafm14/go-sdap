@@ -27,6 +27,9 @@ RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v21.12/pr
 RUN /usr/local/go/bin/go install google.golang.org/protobuf/cmd/protoc-gen-go@latest && \
     /usr/local/go/bin/go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 
+# Añadir los binarios de protoc al path
+RUN export PATH=$PATH:$(go env GOPATH)/bin
+
 # Exponer los puertos de MongoDB y gRPC
 EXPOSE 50051 27017
 
