@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 package sdap;
-option go_package = "src/proto";
+option go_package = "go-sdap/sdap";
 
 import "google/protobuf/empty.proto";
 
