@@ -117,8 +117,6 @@ message DisconnectRequest {
 
 message SessionRequest {
     string hostname = 1;
-    int32 port = 2;
-    bool secure = 3;
 }
 
 message SessionResponse {
