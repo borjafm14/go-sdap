@@ -31,13 +31,13 @@ var (
 	cancelFunc context.CancelFunc
 )
 
-func New(logger *slog.Logger) *sdapClient {
+func New() *sdapClient {
 	return &sdapClient{
 		addr:   "",
 		port:   -1,
 		secure: false,
 		token:  "",
-		logger: logger,
+		logger: slog.Default(),
 	}
 }
 

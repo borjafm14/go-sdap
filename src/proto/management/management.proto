@@ -1,0 +1,11 @@
+
+
+service Management {
+    rpc Connect(SessionRequest) returns (SessionResponse) {}
+    rpc GetUser (UserRequest) returns (UserResponse) {}
+    rpc ListUsers (ListUsersRequest) returns (ListUsersResponse) {}
+    rpc ModifyUsers(ModifyUsersRequest) returns (ModifyUsersResponse) {}
+    rpc AddUsers(AddUsersRequest) returns (AddUsersResponse) {}
+    rpc DeleteUsers(DeleteUsersRequest) returns (DeleteUsersResponse) {}
+    rpc Disconnect(DisconnectRequest) returns (google.protobuf.Empty) {}
+}
