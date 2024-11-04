@@ -5,78 +5,15 @@ option go_package = "go-sdap/sdap";
 
 import "google/protobuf/empty.proto";
 
+//protoc --proto_path=src/proto/sdap --go_out=src/proto/sdap --go_opt=paths=source_relative
+// --go-grpc_out=src/proto/sdap --go-grpc_opt=paths=source_relative sdap.proto
+
 service Operation {
     rpc Connect(SessionRequest) returns (SessionResponse) {}
     rpc Authenticate(AuthenticateRequest) returns (AuthenticateResponse) {}
     rpc GetCharacteristics(CharacteristicsRequest) returns (CharacteristicsResponse) {}
     rpc GetMemberOf(MemberOfRequest) returns (MemberOfResponse) {}
     rpc Disconnect(DisconnectRequest) returns (google.protobuf.Empty) {}
-}
-
-service Management {
-    rpc Connect(SessionRequest) returns (SessionResponse) {}
-    rpc GetUser (UserRequest) returns (UserResponse) {}
-    rpc ListUsers (ListUsersRequest) returns (ListUsersResponse) {}
-    rpc ModifyUsers(ModifyUsersRequest) returns (ModifyUsersResponse) {}
-    rpc AddUsers(AddUsersRequest) returns (AddUsersResponse) {}
-    rpc DeleteUsers(DeleteUsersRequest) returns (DeleteUsersResponse) {}
-    rpc Disconnect(DisconnectRequest) returns (google.protobuf.Empty) {}
-}
-
-message DeleteUsersResponse {
-    Status status = 1;
-}
-
-message AddUsersRequest {
-    string token = 1;
-    repeated User users = 2;
-}
-
-message AddUsersResponse {
-    repeated User users = 1;
-    Status status = 2;
-}
-
-message DeleteUsersRequest {
-    string token = 1;
-    repeated string usernames = 2;
-}
-
-message ModifyUsersRequest {
-    string token = 1;
-    repeated string usernames = 2;
-    repeated Filter filter = 3;
-}
-
-message ModifyUsersResponse {
-    repeated User users = 1;
-    Status status = 2;
-}
-
-message ListUsersRequest {
-    string token = 1;
-    optional string username = 2;
-    repeated Filter filter = 3;
-}
-
-message Filter {
-    Characteristic characteristic = 1;
-    string value = 2;
-}
-
-message ListUsersResponse {
-    repeated User users = 1;
-    Status status = 2;
-}
-
-message UserRequest {
-    string token = 1;
-    string username = 2;
-}
-
-message UserResponse {
-    optional User user = 1;
-    Status status = 2;
 }
 
 message AuthenticateRequest {

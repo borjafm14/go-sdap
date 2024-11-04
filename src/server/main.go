@@ -3,7 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
-	pb "go-sdap/src/proto/sdap"
+	pbManagement "go-sdap/src/proto/management"
+	pbSdap "go-sdap/src/proto/sdap"
+	"go-sdap/src/server/managementServer"
 	"go-sdap/src/server/operationServer"
 	"log/slog"
 	"net"
@@ -26,7 +28,7 @@ func startOperationServer(logger *slog.Logger) {
 			continue
 		}
 		s := grpc.NewServer()
-		pb.RegisterOperationServer(s, operationServer.New(logger))
+		pbSdap.RegisterOperationServer(s, operationServer.New(logger))
 		logger.Info("server listening at", "address", lis.Addr())
 		if err := s.Serve(lis); err != nil {
 			logger.Error("failed to serve", "error", err)
@@ -43,7 +45,7 @@ func startManagementServer(logger *slog.Logger) {
 			return
 		}
 		s := grpc.NewServer()
-		pb.RegisterOperationServer(s, operationServer.New(logger))
+		pbManagement.RegisterManagementServer(s, managementServer.New(logger))
 		logger.Info("server listening at", "address", lis.Addr())
 		if err := s.Serve(lis); err != nil {
 			logger.Error("failed to serve", "error", err)

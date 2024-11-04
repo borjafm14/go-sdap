@@ -41,7 +41,7 @@ func New() *sdapClient {
 	}
 }
 
-func (s *sdapClient) Connect(hostname string, port int, secure bool) (string, pb.Status, error) {
+func (s *sdapClient) Connect(hostname string, port int, secure bool) (pb.Status, error) {
 	s.addr = hostname
 	s.port = port
 	s.secure = secure
@@ -50,7 +50,7 @@ func (s *sdapClient) Connect(hostname string, port int, secure bool) (string, pb
 	if err != nil {
 		s.logger.Error("Connect error", slog.String("err", err.Error()))
 
-		return "", pb.Status_STATUS_ERROR, err
+		return pb.Status_STATUS_ERROR, err
 	}
 
 	client = pb.NewOperationClient(conn)
@@ -64,7 +64,7 @@ func (s *sdapClient) Connect(hostname string, port int, secure bool) (string, pb
 
 	go s.HandleShutdown()
 
-	return sessionResponse.Token, sessionResponse.Status, err
+	return sessionResponse.Status, err
 }
 
 func (s *sdapClient) Authenticate(username string, pass string) (*pb.User, pb.Status, error) {

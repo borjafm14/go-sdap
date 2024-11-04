@@ -1,4 +1,12 @@
+syntax = "proto3";
 
+package management;
+option go_package = "go-sdap/management";
+
+import "google/protobuf/empty.proto";
+
+// protoc --proto_path=src/proto/management --go_out=src/proto/management --go_opt=paths=source_relative
+// --go-grpc_out=src/proto/management --go-grpc_opt=paths=source_relative management.proto
 
 service Management {
     rpc Connect(SessionRequest) returns (SessionResponse) {}
@@ -8,4 +16,117 @@ service Management {
     rpc AddUsers(AddUsersRequest) returns (AddUsersResponse) {}
     rpc DeleteUsers(DeleteUsersRequest) returns (DeleteUsersResponse) {}
     rpc Disconnect(DisconnectRequest) returns (google.protobuf.Empty) {}
+}
+
+message DisconnectRequest {
+    string token = 1;
+}
+
+message SessionRequest {
+    string hostname = 1;
+}
+
+message SessionResponse {
+    string token = 1;
+    Status status = 2;
+}
+
+enum Status {
+    STATUS_OK = 0;
+    STATUS_ERROR = 1;
+    STATUS_USER_NOT_FOUND = 2;
+}
+
+enum Characteristic {
+    COMMON_NAME = 0;
+    FIRST_NAME = 1;
+    LAST_NAME = 2;
+    EMPLOYEE_NUMBER = 3;
+    PHONE_NUMBER = 4;
+    ADDRESS = 5;
+    COMPANY_ROLE = 6;
+    TEAM = 7;
+    REPORTS_TO = 8;
+    OTHER = 9;
+    MEMBER_OF = 10;
+}
+
+enum SDAP_ROLE {
+    ADMINISTRATOR = 0;       // get, post, put, delete
+    MANAGER = 1;             // get all info of every user
+    EMPLOYEE = 2;            // get all info of themselves
+    EMPLOYEE_RESTRICTED = 3; // get basic info of themselves
+}
+
+message User {
+    string username = 1;
+    optional string password = 2;
+    optional string sdap_role = 3;
+    optional string common_name = 4;
+    optional string first_name = 5;
+    optional string last_name = 6;
+    optional string employee_number = 7;
+    optional string phone_number = 8;
+    optional string address = 9;
+    optional string company_role = 10;
+    optional string team = 11;
+    optional string reports_to = 12;
+    map<string, string> characteristics = 13;
+    repeated string member_of = 14;
+}
+
+message UserRequest {
+    string token = 1;
+    string username = 2;
+}
+
+message UserResponse {
+    optional User user = 1;
+    Status status = 2;
+}
+
+message DeleteUsersResponse {
+    Status status = 1;
+}
+
+message AddUsersRequest {
+    string token = 1;
+    repeated User users = 2;
+}
+
+message AddUsersResponse {
+    repeated User users = 1;
+    Status status = 2;
+}
+
+message DeleteUsersRequest {
+    string token = 1;
+    repeated string usernames = 2;
+}
+
+message ModifyUsersRequest {
+    string token = 1;
+    repeated string usernames = 2;
+    repeated Filter filter = 3;
+}
+
+message ModifyUsersResponse {
+    repeated User users = 1;
+    Status status = 2;
+}
+
+message ListUsersRequest {
+    string token = 1;
+    optional string username = 2;
+    repeated Filter filter = 3;
+}
+
+message Filter {
+    Characteristic characteristic = 1;
+    string value = 2;
+}
+
+message ListUsersResponse {
+    repeated User users = 1;
+    Status status = 2;
 }

@@ -2,7 +2,7 @@ package managementServer
 
 import (
 	"context"
-	pb "go-sdap/src/proto/sdap"
+	pb "go-sdap/src/proto/management"
 	"log/slog"
 
 	"google.golang.org/protobuf/types/known/emptypb"

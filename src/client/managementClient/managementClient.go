@@ -1,4 +1,4 @@
-package sdapClient
+package managementClient
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	pb "go-sdap/src/proto/sdap"
+	pb "go-sdap/src/proto/management"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -38,33 +38,33 @@ func New() *managementClient {
 	}
 }
 
-func (s *managementClient) Connect(hostname string, port int, secure bool) (string, pb.Status, error) {
-	s.addr = hostname
-	s.port = port
-	s.secure = secure
+func (m *managementClient) Connect(hostname string, port int, secure bool) (pb.Status, error) {
+	m.addr = hostname
+	m.port = port
+	m.secure = secure
 
-	conn, err = grpc.NewClient(s.addr+":"+strconv.Itoa(s.port), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err = grpc.NewClient(m.addr+":"+strconv.Itoa(m.port), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		s.logger.Error("Connect error", slog.String("err", err.Error()))
+		m.logger.Error("Connect error", slog.String("err", err.Error()))
 
-		return "", pb.Status_STATUS_ERROR, err
+		return pb.Status_STATUS_ERROR, err
 	}
 
 	client = pb.NewManagementClient(conn)
 	ctx, cancelFunc = context.WithTimeout(context.Background(), time.Second*60)
 
 	sessionResponse, err := client.Connect(ctx, &pb.SessionRequest{
-		Hostname: s.addr,
+		Hostname: m.addr,
 	})
 
-	s.token = sessionResponse.Token
+	m.token = sessionResponse.Token
 
-	return sessionResponse.Token, sessionResponse.Status, err
+	return sessionResponse.Status, err
 }
 
-func (s *managementClient) GetUser(username string) (*pb.User, pb.Status, error) {
+func (m *managementClient) GetUser(username string) (*pb.User, pb.Status, error) {
 	userRequest := &pb.UserRequest{
-		Token:    s.token,
+		Token:    m.token,
 		Username: username,
 	}
 
@@ -73,9 +73,9 @@ func (s *managementClient) GetUser(username string) (*pb.User, pb.Status, error)
 	return userResponse.User, userResponse.Status, err
 }
 
-func (s *managementClient) ListUsers(username *string, filter []*pb.Filter) ([]*pb.User, pb.Status, error) {
+func (m *managementClient) ListUsers(username *string, filter []*pb.Filter) ([]*pb.User, pb.Status, error) {
 	listUsersRequest := &pb.ListUsersRequest{
-		Token:    s.token,
+		Token:    m.token,
 		Username: username,
 		Filter:   filter,
 	}
@@ -85,9 +85,9 @@ func (s *managementClient) ListUsers(username *string, filter []*pb.Filter) ([]*
 	return listUsersResponse.Users, listUsersResponse.Status, err
 }
 
-func (s *managementClient) ModifyUsers(usernames []string, filter []*pb.Filter) ([]*pb.User, pb.Status, error) {
+func (m *managementClient) ModifyUsers(usernames []string, filter []*pb.Filter) ([]*pb.User, pb.Status, error) {
 	modifyUsersRequest := &pb.ModifyUsersRequest{
-		Token:     s.token,
+		Token:     m.token,
 		Usernames: usernames,
 		Filter:    filter,
 	}
@@ -97,9 +97,9 @@ func (s *managementClient) ModifyUsers(usernames []string, filter []*pb.Filter) 
 	return modifyUsersResponse.Users, modifyUsersResponse.Status, err
 }
 
-func (s *managementClient) AddUsers(users []*pb.User) ([]*pb.User, pb.Status, error) {
+func (m *managementClient) AddUsers(users []*pb.User) ([]*pb.User, pb.Status, error) {
 	addUsersRequest := &pb.AddUsersRequest{
-		Token: s.token,
+		Token: m.token,
 		Users: users,
 	}
 
@@ -108,9 +108,9 @@ func (s *managementClient) AddUsers(users []*pb.User) ([]*pb.User, pb.Status, er
 	return addUsersResponse.Users, addUsersResponse.Status, err
 }
 
-func (s *managementClient) DeleteUsers(usernames []string) error {
+func (m *managementClient) DeleteUsers(usernames []string) error {
 	deleteUsersRequest := &pb.DeleteUsersRequest{
-		Token:     s.token,
+		Token:     m.token,
 		Usernames: usernames,
 	}
 
@@ -119,13 +119,13 @@ func (s *managementClient) DeleteUsers(usernames []string) error {
 	return err
 }
 
-func (s *managementClient) Disconnect() error {
+func (m *managementClient) Disconnect() error {
 	_, err := client.Disconnect(ctx, &pb.DisconnectRequest{
-		Token: s.token,
+		Token: m.token,
 	})
 
 	if err != nil {
-		s.logger.Error("Disconnect error", slog.String("err", err.Error()))
+		m.logger.Error("Disconnect error", slog.String("err", err.Error()))
 	}
 
 	if cancelFunc != nil {
