@@ -3,6 +3,7 @@ package main
 import (
 	"go-sdap/src/client/managementClient"
 	"go-sdap/src/client/sdapClient"
+	"go-sdap/src/proto/management"
 	"log/slog"
 )
 
@@ -33,10 +34,45 @@ func main() {
 		logger.Info("Connect", "status", mstatus.String())
 	}
 
-	muser, mstatus, err := m.GetUser("borja")
+	pass := "1234"
+	cn := "Borja"
+	ln := "Fernández"
+	en := "1"
+	pn := "622111111"
+	ad := "Avda 1"
+	cr := "Engineer"
+	t := "Backend"
+	chars := make(map[string]string)
+	chars["Role"] = "Employee"
+
+	var mo []string
+	mo = append(mo, "employees")
+
+	var users []*management.User
+
+	mu := management.User{
+		Username:        "borjafm14",
+		Password:        &pass,
+		SdapRole:        management.SDAP_ROLE_ADMINISTRATOR.Enum(),
+		CommonName:      &cn,
+		FirstName:       &cn,
+		LastName:        &ln,
+		EmployeeNumber:  &en,
+		PhoneNumber:     &pn,
+		Address:         &ad,
+		CompanyRole:     &cr,
+		Team:            &t,
+		Characteristics: chars,
+		MemberOf:        mo,
+	}
+
+	users = append(users, &mu)
+
+	mstatus, err = m.AddUsers(users)
 	if err == nil {
-		logger.Debug("GetUser", "status", mstatus.String())
-		logger.Debug("GetUser", "user", muser.String())
+		logger.Debug("AddUsers", "status", mstatus.String())
+	} else {
+		logger.Error("AddUsers", "error", err)
 	}
 
 	m.Disconnect()

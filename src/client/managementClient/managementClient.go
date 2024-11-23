@@ -97,7 +97,7 @@ func (m *managementClient) ModifyUsers(usernames []string, filter []*pb.Filter) 
 	return modifyUsersResponse.Users, modifyUsersResponse.Status, err
 }
 
-func (m *managementClient) AddUsers(users []*pb.User) ([]*pb.User, pb.Status, error) {
+func (m *managementClient) AddUsers(users []*pb.User) (pb.Status, error) {
 	addUsersRequest := &pb.AddUsersRequest{
 		Token: m.token,
 		Users: users,
@@ -105,7 +105,7 @@ func (m *managementClient) AddUsers(users []*pb.User) ([]*pb.User, pb.Status, er
 
 	addUsersResponse, err := client.AddUsers(ctx, addUsersRequest)
 
-	return addUsersResponse.Users, addUsersResponse.Status, err
+	return addUsersResponse.Status, err
 }
 
 func (m *managementClient) DeleteUsers(usernames []string) error {
