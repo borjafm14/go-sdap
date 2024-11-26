@@ -3,6 +3,7 @@ package operationServer
 import (
 	"context"
 	pb "go-sdap/src/proto/sdap"
+	"go-sdap/src/server/dbManager"
 	"log/slog"
 
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -11,11 +12,13 @@ import (
 type operationServer struct {
 	pb.UnimplementedOperationServer
 	logger *slog.Logger
+	db     *dbManager.DbManager
 }
 
-func New(logger *slog.Logger) *operationServer {
+func New(logger *slog.Logger, db *dbManager.DbManager) *operationServer {
 	return &operationServer{
 		logger: logger,
+		db:     db,
 	}
 }
 
