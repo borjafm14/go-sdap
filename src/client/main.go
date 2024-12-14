@@ -34,8 +34,9 @@ func main() {
 		logger.Info("Connect", "status", mstatus.String())
 	}
 
+	us := "borjafm14"
 	pass := "1234"
-	cn := "Borja"
+	cn := ""
 	ln := "Fernández"
 	en := "1"
 	pn := "622111111"
@@ -51,7 +52,7 @@ func main() {
 	var users []*management.User
 
 	mu := management.User{
-		Username:        "borjafm14",
+		Username:        &us,
 		Password:        &pass,
 		SdapRole:        management.SDAP_ROLE_ADMINISTRATOR.Enum(),
 		CommonName:      &cn,

@@ -59,7 +59,7 @@ enum SDAP_ROLE {
 }
 
 message User {
-    string username = 1;
+    optional string username = 1;
     optional string password = 2;
     optional SDAP_ROLE sdap_role = 3;
     optional string common_name = 4;
@@ -110,8 +110,7 @@ message ModifyUsersRequest {
 }
 
 message ModifyUsersResponse {
-    repeated User users = 1;
-    Status status = 2;
+    Status status = 1;
 }
 
 message ListUsersRequest {
