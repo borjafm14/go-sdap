@@ -73,6 +73,22 @@ func startManagementServer(logger *slog.Logger, db *dbManager.DbManager) {
 	}
 }
 
+func rotateLogs(logDir string, logger *slog.Logger, logFile *os.File) {
+	var err error
+	for {
+		time.Sleep(24 * time.Hour)
+		logFile.Close()
+		os.Rename(fmt.Sprintf("%s/sdap.log", logDir), fmt.Sprintf("%s/sdap-%s.log", logDir, time.Now().Format("2006-01-02")))
+		logFile, err = os.OpenFile(fmt.Sprintf("%s/sdap.log", logDir), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		if err != nil {
+			fmt.Printf("Failed to open log file: %v\n", err)
+			return
+		}
+		multiWriter := io.MultiWriter(logFile, os.Stdout)
+		*logger = *slog.New(slog.NewTextHandler(multiWriter, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	}
+}
+
 func main() {
 	flag.Parse()
 	if err := os.MkdirAll(*logDir, 0755); err != nil {
@@ -93,6 +109,7 @@ func main() {
 	db := dbManager.New(logger)
 	defer db.Disconnect()
 
+	go rotateLogs(*logDir, logger, logFile)
 	go checkDatabaseConnection(logger, db)
 	go startOperationServer(logger, db)
 	go startManagementServer(logger, db)
