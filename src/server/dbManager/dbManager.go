@@ -168,6 +168,69 @@ func (d *DbManager) AddUsers(users []*pbManagement.User) pbManagement.Status {
 	return pbManagement.Status_STATUS_OK
 }
 
+func (d *DbManager) ListUsers(username *string, filters []*pbManagement.Filter) ([]*pbManagement.User, pbManagement.Status) {
+	if db == nil {
+		return nil, pbManagement.Status_STATUS_ERROR
+	}
+
+	if username != nil {
+		// if username is provided, return only that user
+		status, user := d.GetUser(*username)
+		return []*pbManagement.User{user}, status
+	}
+
+	// else, search users that match filter
+
+	searchFields := bson.M{}
+	for _, filter := range filters {
+		if filter == nil {
+			continue
+		}
+
+		fieldName, err := helper.CharacteristicToJSON(filter.Characteristic)
+		if err != nil {
+			d.logger.Error("Unknown characteristic in filter", "characteristic", filter.Characteristic)
+			continue
+		}
+
+		searchFields[fieldName] = filter.Value
+	}
+
+	if len(searchFields) == 0 {
+		d.logger.Warn("No valid filters provided")
+		return nil, pbManagement.Status_STATUS_ERROR
+	}
+
+	usersCollection := db.Collection("users")
+
+	cursor, err := usersCollection.Find(ctx, searchFields)
+	if err != nil {
+		d.logger.Error("Error querying database", "error", err)
+		return nil, pbManagement.Status_STATUS_ERROR
+	}
+
+	users := make([]*pbManagement.User, 0)
+	for cursor.Next(ctx) {
+		var userBson bson.M
+		err := cursor.Decode(&userBson)
+		if err != nil {
+			d.logger.Error("Error decoding user", "error", err)
+			continue
+		}
+
+		user := &pbManagement.User{}
+		err = helper.BSONToProto(userBson, user)
+		if err != nil {
+			d.logger.Error("Error converting user from bson", "error", err)
+			continue
+		}
+
+		users = append(users, user)
+	}
+
+	return users, pbManagement.Status_STATUS_OK
+}
+
 func (d *DbManager) ModifyUsers(usernames []string, filters []*pbManagement.Filter) pbManagement.Status {
 	if db == nil {
 		return pbManagement.Status_STATUS_ERROR
@@ -204,6 +267,38 @@ func (d *DbManager) ModifyUsers(usernames []string, filters []*pbManagement.Filt
 	}
 
 	d.logger.Info("Users updated", "matchedCount", result.MatchedCount, "modifiedCount", result.ModifiedCount)
+	return pbManagement.Status_STATUS_OK
+}
+
+func (d *DbManager) ChangeUsername(oldUsername, newUsername string) pbManagement.Status {
+	if db == nil {
+		return pbManagement.Status_STATUS_ERROR
+	}
+
+	usersCollection := db.Collection("users")
+
+	// check if new username already exists
+	filter := bson.M{"username": newUsername}
+	count, err := usersCollection.CountDocuments(ctx, filter)
+	if err != nil {
+		d.logger.Error("Error checking for existing user", "username", newUsername, "error", err)
+		return pbManagement.Status_STATUS_ERROR
+	}
+	if count > 0 {
+		d.logger.Warn("New username already exists", "username", newUsername)
+		return pbManagement.Status_STATUS_ERROR
+	}
+
+	filter = bson.M{"username": oldUsername}
+	update := bson.M{"$set": bson.M{"username": newUsername}}
+
+	_, err = usersCollection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		d.logger.Error("Error updating username in database", "error", err)
+		return pbManagement.Status_STATUS_ERROR
+	}
+
+	d.logger.Info("Username updated successfully", "oldUsername", oldUsername, "newUsername", newUsername)
 	return pbManagement.Status_STATUS_OK
 }
 

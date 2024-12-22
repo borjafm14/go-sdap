@@ -8,8 +8,10 @@ import (
 	"go-sdap/src/server/dbManager"
 	"go-sdap/src/server/managementServer"
 	"go-sdap/src/server/operationServer"
+	"io"
 	"log/slog"
 	"net"
+	"os"
 	"time"
 
 	"google.golang.org/grpc"
@@ -18,6 +20,7 @@ import (
 var (
 	operationPort  = flag.Int("operationPort", 50051, "The operation server port")
 	managementPort = flag.Int("managementPort", 50052, "The management server port")
+	logDir         = flag.String("logDir", "log", "The directory to store logs")
 )
 
 func checkDatabaseConnection(logger *slog.Logger, db *dbManager.DbManager) {
@@ -72,7 +75,20 @@ func startManagementServer(logger *slog.Logger, db *dbManager.DbManager) {
 
 func main() {
 	flag.Parse()
-	logger := slog.Default()
+	if err := os.MkdirAll(*logDir, 0755); err != nil {
+		fmt.Printf("Failed to create log directory: %v\n", err)
+		return
+	}
+
+	logFile, err := os.OpenFile(fmt.Sprintf("%s/sdap.log", *logDir), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		fmt.Printf("Failed to open log file: %v\n", err)
+		return
+	}
+	defer logFile.Close()
+
+	multiWriter := io.MultiWriter(logFile, os.Stdout)
+	logger := slog.New(slog.NewTextHandler(multiWriter, &slog.HandlerOptions{Level: slog.LevelInfo}))
 
 	db := dbManager.New(logger)
 	defer db.Disconnect()

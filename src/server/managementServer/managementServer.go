@@ -55,10 +55,18 @@ func (s *managementServer) ListUsers(ctx context.Context, in *pb.ListUsersReques
 	logger := s.logger.With("RPC", "ListUsers")
 	logger.Info("Incoming request", "req", in)
 
-	var users []*pb.User
+	if s.db == nil {
+		return &pb.ListUsersResponse{
+			Users:  nil,
+			Status: pb.Status_STATUS_ERROR,
+		}, nil
+	}
+
+	users, status := s.db.ListUsers(in.Username, in.Filter)
+
 	return &pb.ListUsersResponse{
 		Users:  users,
-		Status: pb.Status_STATUS_OK,
+		Status: status,
 	}, nil
 }
 
@@ -75,6 +83,23 @@ func (s *managementServer) ModifyUsers(ctx context.Context, in *pb.ModifyUsersRe
 	status := s.db.ModifyUsers(in.Usernames, in.Filter)
 
 	return &pb.ModifyUsersResponse{
+		Status: status,
+	}, nil
+}
+
+func (s *managementServer) ChangeUsername(ctx context.Context, in *pb.UsernameRequest) (*pb.UsernameResponse, error) {
+	logger := s.logger.With("RPC", "ChangeUsername")
+	logger.Info("Incoming request", "req", in)
+
+	if s.db == nil {
+		return &pb.UsernameResponse{
+			Status: pb.Status_STATUS_ERROR,
+		}, nil
+	}
+
+	status := s.db.ChangeUsername(in.OldUsername, in.NewUsername)
+
+	return &pb.UsernameResponse{
 		Status: status,
 	}, nil
 }

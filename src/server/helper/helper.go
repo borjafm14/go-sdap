@@ -16,8 +16,10 @@ func CharacteristicToJSON(characteristic pbManagement.Characteristic) (string, e
 	switch characteristic {
 	case pbManagement.Characteristic_ADDRESS:
 		return "address", nil
-	case pbManagement.Characteristic_COMMON_NAME:
+	case pbManagement.Characteristic_USERNAME:
 		return "username", nil
+	case pbManagement.Characteristic_COMMON_NAME:
+		return "commonName", nil
 	case pbManagement.Characteristic_COMPANY_ROLE:
 		return "companyRole", nil
 	case pbManagement.Characteristic_EMPLOYEE_NUMBER:

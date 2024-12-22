@@ -14,8 +14,19 @@ service Management {
     rpc ListUsers (ListUsersRequest) returns (ListUsersResponse) {}
     rpc ModifyUsers(ModifyUsersRequest) returns (ModifyUsersResponse) {}
     rpc AddUsers(AddUsersRequest) returns (AddUsersResponse) {}
+    rpc ChangeUsername(UsernameRequest) returns (UsernameResponse) {}
     rpc DeleteUsers(DeleteUsersRequest) returns (DeleteUsersResponse) {}
     rpc Disconnect(DisconnectRequest) returns (google.protobuf.Empty) {}
+}
+
+message UsernameRequest {
+    string token = 1;
+    string old_username = 2;
+    string new_username = 3;
+}
+
+message UsernameResponse {
+    Status status = 1;
 }
 
 message DisconnectRequest {
@@ -49,6 +60,7 @@ enum Characteristic {
     REPORTS_TO = 8;
     OTHER = 9;
     MEMBER_OF = 10;
+    USERNAME = 11;
 }
 
 enum SDAP_ROLE {

@@ -20,13 +20,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Management_Connect_FullMethodName     = "/management.Management/Connect"
-	Management_GetUser_FullMethodName     = "/management.Management/GetUser"
-	Management_ListUsers_FullMethodName   = "/management.Management/ListUsers"
-	Management_ModifyUsers_FullMethodName = "/management.Management/ModifyUsers"
-	Management_AddUsers_FullMethodName    = "/management.Management/AddUsers"
-	Management_DeleteUsers_FullMethodName = "/management.Management/DeleteUsers"
-	Management_Disconnect_FullMethodName  = "/management.Management/Disconnect"
+	Management_Connect_FullMethodName        = "/management.Management/Connect"
+	Management_GetUser_FullMethodName        = "/management.Management/GetUser"
+	Management_ListUsers_FullMethodName      = "/management.Management/ListUsers"
+	Management_ModifyUsers_FullMethodName    = "/management.Management/ModifyUsers"
+	Management_AddUsers_FullMethodName       = "/management.Management/AddUsers"
+	Management_ChangeUsername_FullMethodName = "/management.Management/ChangeUsername"
+	Management_DeleteUsers_FullMethodName    = "/management.Management/DeleteUsers"
+	Management_Disconnect_FullMethodName     = "/management.Management/Disconnect"
 )
 
 // ManagementClient is the client API for Management service.
@@ -38,6 +39,7 @@ type ManagementClient interface {
 	ListUsers(ctx context.Context, in *ListUsersRequest, opts ...grpc.CallOption) (*ListUsersResponse, error)
 	ModifyUsers(ctx context.Context, in *ModifyUsersRequest, opts ...grpc.CallOption) (*ModifyUsersResponse, error)
 	AddUsers(ctx context.Context, in *AddUsersRequest, opts ...grpc.CallOption) (*AddUsersResponse, error)
+	ChangeUsername(ctx context.Context, in *UsernameRequest, opts ...grpc.CallOption) (*UsernameResponse, error)
 	DeleteUsers(ctx context.Context, in *DeleteUsersRequest, opts ...grpc.CallOption) (*DeleteUsersResponse, error)
 	Disconnect(ctx context.Context, in *DisconnectRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
@@ -100,6 +102,16 @@ func (c *managementClient) AddUsers(ctx context.Context, in *AddUsersRequest, op
 	return out, nil
 }
 
+func (c *managementClient) ChangeUsername(ctx context.Context, in *UsernameRequest, opts ...grpc.CallOption) (*UsernameResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UsernameResponse)
+	err := c.cc.Invoke(ctx, Management_ChangeUsername_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *managementClient) DeleteUsers(ctx context.Context, in *DeleteUsersRequest, opts ...grpc.CallOption) (*DeleteUsersResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DeleteUsersResponse)
@@ -129,6 +141,7 @@ type ManagementServer interface {
 	ListUsers(context.Context, *ListUsersRequest) (*ListUsersResponse, error)
 	ModifyUsers(context.Context, *ModifyUsersRequest) (*ModifyUsersResponse, error)
 	AddUsers(context.Context, *AddUsersRequest) (*AddUsersResponse, error)
+	ChangeUsername(context.Context, *UsernameRequest) (*UsernameResponse, error)
 	DeleteUsers(context.Context, *DeleteUsersRequest) (*DeleteUsersResponse, error)
 	Disconnect(context.Context, *DisconnectRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedManagementServer()
@@ -155,6 +168,9 @@ func (UnimplementedManagementServer) ModifyUsers(context.Context, *ModifyUsersRe
 }
 func (UnimplementedManagementServer) AddUsers(context.Context, *AddUsersRequest) (*AddUsersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddUsers not implemented")
+}
+func (UnimplementedManagementServer) ChangeUsername(context.Context, *UsernameRequest) (*UsernameResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ChangeUsername not implemented")
 }
 func (UnimplementedManagementServer) DeleteUsers(context.Context, *DeleteUsersRequest) (*DeleteUsersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteUsers not implemented")
@@ -273,6 +289,24 @@ func _Management_AddUsers_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Management_ChangeUsername_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UsernameRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ManagementServer).ChangeUsername(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Management_ChangeUsername_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ManagementServer).ChangeUsername(ctx, req.(*UsernameRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Management_DeleteUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteUsersRequest)
 	if err := dec(in); err != nil {
@@ -335,6 +369,10 @@ var Management_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AddUsers",
 			Handler:    _Management_AddUsers_Handler,
+		},
+		{
+			MethodName: "ChangeUsername",
+			Handler:    _Management_ChangeUsername_Handler,
 		},
 		{
 			MethodName: "DeleteUsers",
