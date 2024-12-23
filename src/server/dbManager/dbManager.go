@@ -306,6 +306,11 @@ func (d *DbManager) ModifyUsers(usernames []string, filters []*pbManagement.Filt
 			continue
 		}
 
+		if fieldName == "password" && !helper.ValidatePassword(filter.Value) {
+			d.logger.Warn("New password does not meet requirements", "password", filter.Value)
+			continue
+		}
+
 		updateFields[fieldName] = filter.Value
 	}
 
