@@ -79,7 +79,7 @@ func (s *sdapClient) Authenticate(username string, pass string) (*pb.User, pb.St
 	return authenticateResponse.User, authenticateResponse.Status, err
 }
 
-func (s *sdapClient) GetCharacteristics(username *string, characteristics []pb.Characteristic) (*pb.User, pb.Status, error) {
+func (s *sdapClient) GetCharacteristics(username string, characteristics []pb.Characteristic) (*pb.User, pb.Status, error) {
 	characteristicsRequest := &pb.CharacteristicsRequest{
 		Token:           s.token,
 		Username:        username,
@@ -91,7 +91,7 @@ func (s *sdapClient) GetCharacteristics(username *string, characteristics []pb.C
 	return characteristicsResponse.User, characteristicsResponse.Status, err
 }
 
-func (s *sdapClient) GetMemberOf(username *string) ([]string, pb.Status, error) {
+func (s *sdapClient) GetMemberOf(username string) ([]string, pb.Status, error) {
 	memberOfRequest := &pb.MemberOfRequest{
 		Token:    s.token,
 		Username: username,

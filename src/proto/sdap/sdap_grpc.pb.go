@@ -24,6 +24,7 @@ const (
 	Operation_Authenticate_FullMethodName       = "/sdap.Operation/Authenticate"
 	Operation_GetCharacteristics_FullMethodName = "/sdap.Operation/GetCharacteristics"
 	Operation_GetMemberOf_FullMethodName        = "/sdap.Operation/GetMemberOf"
+	Operation_ChangePassword_FullMethodName     = "/sdap.Operation/ChangePassword"
 	Operation_Disconnect_FullMethodName         = "/sdap.Operation/Disconnect"
 )
 
@@ -35,6 +36,7 @@ type OperationClient interface {
 	Authenticate(ctx context.Context, in *AuthenticateRequest, opts ...grpc.CallOption) (*AuthenticateResponse, error)
 	GetCharacteristics(ctx context.Context, in *CharacteristicsRequest, opts ...grpc.CallOption) (*CharacteristicsResponse, error)
 	GetMemberOf(ctx context.Context, in *MemberOfRequest, opts ...grpc.CallOption) (*MemberOfResponse, error)
+	ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*ChangePasswordResponse, error)
 	Disconnect(ctx context.Context, in *DisconnectRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
@@ -86,6 +88,16 @@ func (c *operationClient) GetMemberOf(ctx context.Context, in *MemberOfRequest, 
 	return out, nil
 }
 
+func (c *operationClient) ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*ChangePasswordResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ChangePasswordResponse)
+	err := c.cc.Invoke(ctx, Operation_ChangePassword_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *operationClient) Disconnect(ctx context.Context, in *DisconnectRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
@@ -104,6 +116,7 @@ type OperationServer interface {
 	Authenticate(context.Context, *AuthenticateRequest) (*AuthenticateResponse, error)
 	GetCharacteristics(context.Context, *CharacteristicsRequest) (*CharacteristicsResponse, error)
 	GetMemberOf(context.Context, *MemberOfRequest) (*MemberOfResponse, error)
+	ChangePassword(context.Context, *ChangePasswordRequest) (*ChangePasswordResponse, error)
 	Disconnect(context.Context, *DisconnectRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedOperationServer()
 }
@@ -126,6 +139,9 @@ func (UnimplementedOperationServer) GetCharacteristics(context.Context, *Charact
 }
 func (UnimplementedOperationServer) GetMemberOf(context.Context, *MemberOfRequest) (*MemberOfResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetMemberOf not implemented")
+}
+func (UnimplementedOperationServer) ChangePassword(context.Context, *ChangePasswordRequest) (*ChangePasswordResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ChangePassword not implemented")
 }
 func (UnimplementedOperationServer) Disconnect(context.Context, *DisconnectRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Disconnect not implemented")
@@ -223,6 +239,24 @@ func _Operation_GetMemberOf_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Operation_ChangePassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ChangePasswordRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OperationServer).ChangePassword(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Operation_ChangePassword_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OperationServer).ChangePassword(ctx, req.(*ChangePasswordRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Operation_Disconnect_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DisconnectRequest)
 	if err := dec(in); err != nil {
@@ -263,6 +297,10 @@ var Operation_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetMemberOf",
 			Handler:    _Operation_GetMemberOf_Handler,
+		},
+		{
+			MethodName: "ChangePassword",
+			Handler:    _Operation_ChangePassword_Handler,
 		},
 		{
 			MethodName: "Disconnect",

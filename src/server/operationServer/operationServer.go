@@ -36,10 +36,35 @@ func (s *operationServer) Authenticate(ctx context.Context, in *pb.AuthenticateR
 	logger := s.logger.With("RPC", "Authenticate")
 	logger.Info("Incoming request", "req", in)
 
-	var user *pb.User
+	if s.db == nil {
+		return &pb.AuthenticateResponse{
+			User:   nil,
+			Status: pb.Status_STATUS_ERROR,
+		}, nil
+	}
+
+	user, status := s.db.Authenticate(in.Username, in.Password)
+
 	return &pb.AuthenticateResponse{
 		User:   user,
-		Status: pb.Status_STATUS_OK,
+		Status: status,
+	}, nil
+}
+
+func (s *operationServer) ChangePassword(ctx context.Context, in *pb.ChangePasswordRequest) (*pb.ChangePasswordResponse, error) {
+	logger := s.logger.With("RPC", "ChangePassword")
+	logger.Info("Incoming request", "req", in)
+
+	if s.db == nil {
+		return &pb.ChangePasswordResponse{
+			Status: pb.Status_STATUS_ERROR,
+		}, nil
+	}
+
+	status := s.db.ChangePassword(in.Username, in.OldPassword, in.NewPassword)
+
+	return &pb.ChangePasswordResponse{
+		Status: status,
 	}, nil
 }
 
@@ -47,10 +72,18 @@ func (s *operationServer) GetCharacteristics(ctx context.Context, in *pb.Charact
 	logger := s.logger.With("RPC", "GetCharacteristics")
 	logger.Info("Incoming request", "req", in)
 
-	var user *pb.User
+	if s.db == nil {
+		return &pb.CharacteristicsResponse{
+			User:   nil,
+			Status: pb.Status_STATUS_ERROR,
+		}, nil
+	}
+
+	user, status := s.db.GetCharacteristics(in.Username, in.Characteristics)
+
 	return &pb.CharacteristicsResponse{
 		User:   user,
-		Status: pb.Status_STATUS_OK,
+		Status: status,
 	}, nil
 }
 
@@ -58,10 +91,18 @@ func (s *operationServer) GetMemberOf(ctx context.Context, in *pb.MemberOfReques
 	logger := s.logger.With("RPC", "GetMemberOf")
 	logger.Info("Incoming request", "req", in)
 
-	var memberOf []string
+	if s.db == nil {
+		return &pb.MemberOfResponse{
+			MemberOf: nil,
+			Status:   pb.Status_STATUS_ERROR,
+		}, nil
+	}
+
+	memberOf, status := s.db.GetMemberOf(in.Username)
+
 	return &pb.MemberOfResponse{
 		MemberOf: memberOf,
-		Status:   pb.Status_STATUS_OK,
+		Status:   status,
 	}, nil
 }
 

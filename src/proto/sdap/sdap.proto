@@ -13,7 +13,19 @@ service Operation {
     rpc Authenticate(AuthenticateRequest) returns (AuthenticateResponse) {}
     rpc GetCharacteristics(CharacteristicsRequest) returns (CharacteristicsResponse) {}
     rpc GetMemberOf(MemberOfRequest) returns (MemberOfResponse) {}
+    rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse) {}
     rpc Disconnect(DisconnectRequest) returns (google.protobuf.Empty) {}
+}
+
+message ChangePasswordRequest {
+    string token = 1;
+    string username = 2;
+    string old_password = 3;
+    string new_password = 4;
+}
+
+message ChangePasswordResponse {
+    Status status = 1;
 }
 
 message AuthenticateRequest {
@@ -29,7 +41,7 @@ message AuthenticateResponse {
 
 message CharacteristicsRequest {
     string token = 1;
-    optional string username = 2; // only for administrator/manager
+    string username = 2;
     repeated Characteristic characteristics = 3;
 }
 
@@ -40,7 +52,7 @@ message CharacteristicsResponse {
 
 message MemberOfRequest {
     string token = 1;
-    optional string username = 2; // only for administrator/manager
+    string username = 2;
 }
 
 message MemberOfResponse {
@@ -91,7 +103,7 @@ enum SDAP_ROLE {
 message User {
     string username = 1;
     optional string password = 2;
-    optional string sdap_role = 3;
+    optional SDAP_ROLE sdap_role = 3;
     optional string common_name = 4;
     optional string first_name = 5;
     optional string last_name = 6;

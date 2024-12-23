@@ -1,7 +1,10 @@
 package helper
 
 import (
+	"crypto/rand"
 	"fmt"
+	"math/big"
+	mathrand "math/rand"
 	"regexp"
 	"strconv"
 
@@ -10,9 +13,18 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	pbManagement "go-sdap/src/proto/management"
+	pbSdap "go-sdap/src/proto/sdap"
 )
 
-func CharacteristicToJSON(characteristic pbManagement.Characteristic) (string, error) {
+const (
+	passwordLength = 8
+	lowercase      = "abcdefghijklmnopqrstuvwxyz"
+	uppercase      = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	digits         = "0123456789"
+	specialChars   = "!@#$%^&*()-_=+[]{}|;:,.<>?/~`"
+)
+
+func ManagementCharacteristicToJSON(characteristic pbManagement.Characteristic) (string, error) {
 	switch characteristic {
 	case pbManagement.Characteristic_ADDRESS:
 		return "address", nil
@@ -37,6 +49,35 @@ func CharacteristicToJSON(characteristic pbManagement.Characteristic) (string, e
 	case pbManagement.Characteristic_REPORTS_TO:
 		return "reportsTo", nil
 	case pbManagement.Characteristic_TEAM:
+		return "team", nil
+	default:
+		return "", fmt.Errorf("unknown characteristic: %v", characteristic)
+	}
+}
+
+func SdapCharacteristicToJSON(characteristic pbSdap.Characteristic) (string, error) {
+	switch characteristic {
+	case pbSdap.Characteristic_ADDRESS:
+		return "address", nil
+	case pbSdap.Characteristic_COMMON_NAME:
+		return "commonName", nil
+	case pbSdap.Characteristic_COMPANY_ROLE:
+		return "companyRole", nil
+	case pbSdap.Characteristic_EMPLOYEE_NUMBER:
+		return "employeeNumber", nil
+	case pbSdap.Characteristic_FIRST_NAME:
+		return "firstName", nil
+	case pbSdap.Characteristic_LAST_NAME:
+		return "lastName", nil
+	case pbSdap.Characteristic_MEMBER_OF:
+		return "memberOf", nil
+	case pbSdap.Characteristic_OTHER:
+		return "other", nil
+	case pbSdap.Characteristic_PHONE_NUMBER:
+		return "phoneNumber", nil
+	case pbSdap.Characteristic_REPORTS_TO:
+		return "reportsTo", nil
+	case pbSdap.Characteristic_TEAM:
 		return "team", nil
 	default:
 		return "", fmt.Errorf("unknown characteristic: %v", characteristic)
@@ -68,6 +109,64 @@ func SanitizeName(name string) string {
 		}
 	}
 	return string(validChars)
+}
+
+func GeneratePassword() string {
+	// Generate password, at least 8 characters long,
+	// with at least one uppercase, one lowercase, one digit and one special character
+
+	allChars := lowercase + uppercase + digits + specialChars
+	password := make([]byte, passwordLength)
+
+	// Ensure the password contains at least one character from each category
+	password[0] = lowercase[randInt(len(lowercase))]
+	password[1] = uppercase[randInt(len(uppercase))]
+	password[2] = digits[randInt(len(digits))]
+	password[3] = specialChars[randInt(len(specialChars))]
+
+	// Fill the rest of the password with random characters from all categories
+	for i := 4; i < passwordLength; i++ {
+		password[i] = allChars[randInt(len(allChars))]
+	}
+
+	mathrand.Shuffle(passwordLength, func(i, j int) {
+		password[i], password[j] = password[j], password[i]
+	})
+
+	return string(password)
+}
+
+func ValidatePassword(password string) bool {
+	// Validate password, at least 8 characters long,
+	// with at least one uppercase, one lowercase, one digit and one special character
+
+	if len(password) < passwordLength {
+		return false
+	}
+
+	lowercaseFound := false
+	uppercaseFound := false
+	digitFound := false
+	specialCharFound := false
+
+	for _, char := range password {
+		if char >= 'a' && char <= 'z' {
+			lowercaseFound = true
+		} else if char >= 'A' && char <= 'Z' {
+			uppercaseFound = true
+		} else if char >= '0' && char <= '9' {
+			digitFound = true
+		} else {
+			specialCharFound = true
+		}
+	}
+
+	return lowercaseFound && uppercaseFound && digitFound && specialCharFound
+}
+
+func randInt(max int) int {
+	n, _ := rand.Int(rand.Reader, big.NewInt(int64(max)))
+	return int(n.Int64())
 }
 
 func ProtoToBSON(pb proto.Message) (bson.M, error) {

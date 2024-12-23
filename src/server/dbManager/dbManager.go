@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	pbManagement "go-sdap/src/proto/management"
+	pbSdap "go-sdap/src/proto/sdap"
 	"go-sdap/src/server/helper"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -136,17 +137,9 @@ func (d *DbManager) AddUsers(users []*pbManagement.User) pbManagement.Status {
 
 		user.Username = &username
 
-		filter = bson.M{"username": *user.Username}
-		count, err := usersCollection.CountDocuments(ctx, filter)
-		if err != nil {
-			d.logger.Error("Error checking for existing user", "username", user.Username, "error", err)
-			continue
-		}
-
-		if count > 0 {
-			d.logger.Warn("User already exists", "username", user.Username)
-			continue
-		}
+		// Generate random password
+		password := helper.GeneratePassword()
+		user.Password = &password
 
 		bsonDoc, err := helper.ProtoToBSON(user)
 
@@ -168,6 +161,71 @@ func (d *DbManager) AddUsers(users []*pbManagement.User) pbManagement.Status {
 	return pbManagement.Status_STATUS_OK
 }
 
+func (d *DbManager) ChangePassword(username string, old_password string, new_password string) pbSdap.Status {
+	if db == nil {
+		return pbSdap.Status_STATUS_ERROR
+	}
+
+	// check new password requirements
+	if !helper.ValidatePassword(new_password) {
+		d.logger.Warn("New password does not meet requirements", "password", new_password)
+		return pbSdap.Status_STATUS_ERROR
+	}
+
+	usersCollection := db.Collection("users")
+
+	filter := bson.M{"username": username, "password": old_password}
+	update := bson.M{"$set": bson.M{"password": new_password}}
+
+	result, err := usersCollection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		d.logger.Error("Error updating password in database", "error", err)
+		return pbSdap.Status_STATUS_ERROR
+	}
+
+	if result.ModifiedCount == 0 {
+		d.logger.Warn("Password not updated, username or old password is incorrect", "username", username)
+		return pbSdap.Status_STATUS_ERROR
+	}
+
+	d.logger.Info("Password updated successfully", "username", username)
+	return pbSdap.Status_STATUS_OK
+
+}
+
+func (d *DbManager) Authenticate(username string, password string) (*pbSdap.User, pbSdap.Status) {
+	if db == nil {
+		return nil, pbSdap.Status_STATUS_ERROR
+	}
+
+	usersCollection := db.Collection("users")
+
+	// TODO get more or less user fields depending on user's sdap_role
+
+	filter := bson.M{"username": username, "password": password}
+	var userBson bson.M
+	err := usersCollection.FindOne(ctx, filter).Decode(&userBson)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			d.logger.Error("Username not found", "username", username)
+		} else {
+			d.logger.Error("Authenticate error", "error", err)
+		}
+
+		return nil, pbSdap.Status_STATUS_ERROR
+	}
+
+	user := &pbSdap.User{}
+	err = helper.BSONToProto(userBson, user)
+
+	if err != nil {
+		d.logger.Error("Error converting user from bson", "error", err)
+		return nil, pbSdap.Status_STATUS_ERROR
+	}
+
+	return user, pbSdap.Status_STATUS_OK
+}
+
 func (d *DbManager) ListUsers(username *string, filters []*pbManagement.Filter) ([]*pbManagement.User, pbManagement.Status) {
 	if db == nil {
 		return nil, pbManagement.Status_STATUS_ERROR
@@ -187,7 +245,7 @@ func (d *DbManager) ListUsers(username *string, filters []*pbManagement.Filter) 
 			continue
 		}
 
-		fieldName, err := helper.CharacteristicToJSON(filter.Characteristic)
+		fieldName, err := helper.ManagementCharacteristicToJSON(filter.Characteristic)
 		if err != nil {
 			d.logger.Error("Unknown characteristic in filter", "characteristic", filter.Characteristic)
 			continue
@@ -242,7 +300,7 @@ func (d *DbManager) ModifyUsers(usernames []string, filters []*pbManagement.Filt
 			continue
 		}
 
-		fieldName, err := helper.CharacteristicToJSON(filter.Characteristic)
+		fieldName, err := helper.ManagementCharacteristicToJSON(filter.Characteristic)
 		if err != nil {
 			d.logger.Error("Unknown characteristic in filter", "characteristic", filter.Characteristic)
 			continue
@@ -268,6 +326,96 @@ func (d *DbManager) ModifyUsers(usernames []string, filters []*pbManagement.Filt
 
 	d.logger.Info("Users updated", "matchedCount", result.MatchedCount, "modifiedCount", result.ModifiedCount)
 	return pbManagement.Status_STATUS_OK
+}
+
+func (d *DbManager) GetCharacteristics(username string, characteristics []pbSdap.Characteristic) (*pbSdap.User, pbSdap.Status) {
+	if db == nil {
+		return nil, pbSdap.Status_STATUS_ERROR
+	}
+
+	usersCollection := db.Collection("users")
+
+	projection := bson.M{}
+	for _, characteristic := range characteristics {
+		fieldName, err := helper.SdapCharacteristicToJSON(characteristic)
+		if err != nil {
+			d.logger.Error("Unknown characteristic", "characteristic", characteristic)
+			continue
+		}
+		projection[fieldName] = 1
+	}
+	projection["username"] = 1 // Ensure username is always included
+
+	if len(projection) == 0 {
+		d.logger.Warn("No valid characteristics provided")
+		return nil, pbSdap.Status_STATUS_ERROR
+	}
+
+	filter := bson.M{"username": username}
+	opts := options.FindOne().SetProjection(projection)
+
+	var userBson bson.M
+	err := usersCollection.FindOne(ctx, filter, opts).Decode(&userBson)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			d.logger.Error("Username not found", "username", username)
+			return nil, pbSdap.Status_STATUS_USER_NOT_FOUND
+		}
+		d.logger.Error("Error querying database", "error", err)
+		return nil, pbSdap.Status_STATUS_ERROR
+	}
+
+	user := &pbSdap.User{}
+	err = helper.BSONToProto(userBson, user)
+	if err != nil {
+		d.logger.Error("Error converting user from bson", "error", err)
+		return nil, pbSdap.Status_STATUS_ERROR
+	}
+
+	return user, pbSdap.Status_STATUS_OK
+}
+
+func (d *DbManager) GetMemberOf(username string) ([]string, pbSdap.Status) {
+	if db == nil {
+		return nil, pbSdap.Status_STATUS_ERROR
+	}
+
+	usersCollection := db.Collection("users")
+
+	filter := bson.M{"username": username}
+	projection := bson.M{"member_of": 1, "_id": 0}
+
+	var result bson.M
+	err := usersCollection.FindOne(ctx, filter, options.FindOne().SetProjection(projection)).Decode(&result)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			d.logger.Error("Username not found", "username", username)
+			return nil, pbSdap.Status_STATUS_USER_NOT_FOUND
+		}
+		d.logger.Error("Error querying database", "error", err)
+		return nil, pbSdap.Status_STATUS_ERROR
+	}
+
+	memberOfBson, ok := result["member_of"].(bson.A)
+	if !ok {
+		d.logger.Warn("Field 'member_of' not found or invalid type", "username", username)
+		return nil, pbSdap.Status_STATUS_ERROR
+	}
+
+	memberOf := make([]string, len(memberOfBson))
+	for i, v := range memberOfBson {
+		memberOf[i], ok = v.(string)
+		if !ok {
+			d.logger.Warn("Invalid type in 'member_of' array", "username", username)
+			return nil, pbSdap.Status_STATUS_ERROR
+		}
+	}
+	if !ok {
+		d.logger.Warn("Field 'member_of' not found or invalid type", "username", username)
+		return nil, pbSdap.Status_STATUS_ERROR
+	}
+
+	return memberOf, pbSdap.Status_STATUS_OK
 }
 
 func (d *DbManager) ChangeUsername(oldUsername, newUsername string) pbManagement.Status {
