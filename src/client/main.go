@@ -52,19 +52,18 @@ func main() {
 	var users []*management.User
 
 	mu := management.User{
-		Username:        &us,
-		Password:        &pass,
-		SdapRole:        management.SDAP_ROLE_ADMINISTRATOR.Enum(),
-		CommonName:      &cn,
-		FirstName:       &cn,
-		LastName:        &ln,
-		EmployeeNumber:  &en,
-		PhoneNumber:     &pn,
-		Address:         &ad,
-		CompanyRole:     &cr,
-		Team:            &t,
-		Characteristics: chars,
-		MemberOf:        mo,
+		Username:             &us,
+		Password:             &pass,
+		CommonName:           &cn,
+		FirstName:            &cn,
+		LastName:             &ln,
+		EmployeeNumber:       &en,
+		PhoneNumber:          &pn,
+		Address:              &ad,
+		CompanyRole:          &cr,
+		Team:                 &t,
+		OtherCharacteristics: chars,
+		MemberOf:             mo,
 	}
 
 	users = append(users, &mu)

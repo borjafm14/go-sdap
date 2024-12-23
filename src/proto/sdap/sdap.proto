@@ -93,26 +93,18 @@ enum Characteristic {
     MEMBER_OF = 10;
 }
 
-enum SDAP_ROLE {
-    ADMINISTRATOR = 0;       // get, post, put, delete
-    MANAGER = 1;             // get all info of every user
-    EMPLOYEE = 2;            // get all info of themselves
-    EMPLOYEE_RESTRICTED = 3; // get basic info of themselves
-}
-
 message User {
     string username = 1;
     optional string password = 2;
-    optional SDAP_ROLE sdap_role = 3;
-    optional string common_name = 4;
-    optional string first_name = 5;
-    optional string last_name = 6;
-    optional string employee_number = 7;
-    optional string phone_number = 8;
-    optional string address = 9;
-    optional string company_role = 10;
-    optional string team = 11;
-    optional string reports_to = 12;
-    map<string, string> characteristics = 13;
-    repeated string member_of = 14;
+    optional string common_name = 3;
+    optional string first_name = 4;
+    optional string last_name = 5;
+    optional string employee_number = 6;
+    optional string phone_number = 7;
+    optional string address = 8;
+    optional string company_role = 9;
+    optional string team = 10;
+    optional string reports_to = 11;
+    map<string, string> other_characteristics = 12;
+    repeated string member_of = 13;
 }

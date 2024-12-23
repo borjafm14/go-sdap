@@ -43,7 +43,7 @@ func ManagementCharacteristicToJSON(characteristic pbManagement.Characteristic) 
 	case pbManagement.Characteristic_MEMBER_OF:
 		return "memberOf", nil
 	case pbManagement.Characteristic_OTHER:
-		return "other", nil
+		return "other_characteristics", nil
 	case pbManagement.Characteristic_PHONE_NUMBER:
 		return "phoneNumber", nil
 	case pbManagement.Characteristic_REPORTS_TO:
@@ -72,7 +72,7 @@ func SdapCharacteristicToJSON(characteristic pbSdap.Characteristic) (string, err
 	case pbSdap.Characteristic_MEMBER_OF:
 		return "memberOf", nil
 	case pbSdap.Characteristic_OTHER:
-		return "other", nil
+		return "other_characteristics", nil
 	case pbSdap.Characteristic_PHONE_NUMBER:
 		return "phoneNumber", nil
 	case pbSdap.Characteristic_REPORTS_TO:
