@@ -8,6 +8,7 @@ import (
 	"go-sdap/src/server/dbManager"
 	"go-sdap/src/server/managementServer"
 	"go-sdap/src/server/operationServer"
+	"go-sdap/src/server/sessionManager"
 	"io"
 	"log/slog"
 	"net"
@@ -36,7 +37,7 @@ func checkDatabaseConnection(logger *slog.Logger, db *dbManager.DbManager) {
 	}
 }
 
-func startOperationServer(logger *slog.Logger, db *dbManager.DbManager) {
+func startOperationServer(logger *slog.Logger, db *dbManager.DbManager, sm *sessionManager.SessionManager) {
 	for {
 		lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *operationPort))
 		if err != nil {
@@ -45,7 +46,7 @@ func startOperationServer(logger *slog.Logger, db *dbManager.DbManager) {
 			continue
 		}
 		s := grpc.NewServer()
-		pbSdap.RegisterOperationServer(s, operationServer.New(logger, db))
+		pbSdap.RegisterOperationServer(s, operationServer.New(logger, db, sm))
 		logger.Info("Operation server listening at", "address", lis.Addr())
 		if err := s.Serve(lis); err != nil {
 			logger.Error("failed to serve", "error", err)
@@ -54,7 +55,7 @@ func startOperationServer(logger *slog.Logger, db *dbManager.DbManager) {
 	}
 }
 
-func startManagementServer(logger *slog.Logger, db *dbManager.DbManager) {
+func startManagementServer(logger *slog.Logger, db *dbManager.DbManager, sm *sessionManager.SessionManager) {
 	for {
 		lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *managementPort))
 		if err != nil {
@@ -62,7 +63,7 @@ func startManagementServer(logger *slog.Logger, db *dbManager.DbManager) {
 			return
 		}
 		s := grpc.NewServer()
-		pbManagement.RegisterManagementServer(s, managementServer.New(logger, db))
+		pbManagement.RegisterManagementServer(s, managementServer.New(logger, db, sm))
 		logger.Info("Management server listening at", "address", lis.Addr())
 		if err := s.Serve(lis); err != nil {
 			logger.Error("failed to serve", "error", err)
@@ -109,10 +110,12 @@ func main() {
 	db := dbManager.New(logger)
 	defer db.Disconnect()
 
+	sm := sessionManager.New(logger)
+
 	go rotateLogs(*logDir, logger, logFile)
 	go checkDatabaseConnection(logger, db)
-	go startOperationServer(logger, db)
-	go startManagementServer(logger, db)
+	go startOperationServer(logger, db, sm)
+	go startManagementServer(logger, db, sm)
 
 	select {}
 }

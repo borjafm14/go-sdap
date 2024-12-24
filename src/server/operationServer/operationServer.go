@@ -4,6 +4,7 @@ import (
 	"context"
 	pb "go-sdap/src/proto/sdap"
 	"go-sdap/src/server/dbManager"
+	"go-sdap/src/server/sessionManager"
 	"log/slog"
 
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -15,7 +16,7 @@ type operationServer struct {
 	db     *dbManager.DbManager
 }
 
-func New(logger *slog.Logger, db *dbManager.DbManager) *operationServer {
+func New(logger *slog.Logger, db *dbManager.DbManager, sm *sessionManager.SessionManager) *operationServer {
 	return &operationServer{
 		logger: logger,
 		db:     db,
