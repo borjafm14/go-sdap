@@ -169,6 +169,14 @@ func randInt(max int) int {
 	return int(n.Int64())
 }
 
+func GenerateToken() string {
+	token := make([]byte, 32)
+	for i := range token {
+		token[i] = byte(randInt(256))
+	}
+	return fmt.Sprintf("%x", token)
+}
+
 func ProtoToBSON(pb proto.Message) (bson.M, error) {
 	protoJSON, err := protojson.Marshal(pb)
 	if err != nil {

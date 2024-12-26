@@ -193,14 +193,35 @@ func (d *DbManager) ChangePassword(username string, old_password string, new_pas
 
 }
 
+func (d *DbManager) AuthenticateAdmin(username string, password string) pbManagement.Status {
+	if db == nil {
+		return pbManagement.Status_STATUS_ERROR
+	}
+
+	usersCollection := db.Collection("users")
+
+	filter := bson.M{"username": username, "password": password}
+	var userBson bson.M
+	err := usersCollection.FindOne(ctx, filter).Decode(&userBson)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			d.logger.Error("Username not found", "username", username)
+		} else {
+			d.logger.Error("Authenticate error", "error", err)
+		}
+
+		return pbManagement.Status_STATUS_ERROR
+	}
+
+	return pbManagement.Status_STATUS_OK
+}
+
 func (d *DbManager) Authenticate(username string, password string) (*pbSdap.User, pbSdap.Status) {
 	if db == nil {
 		return nil, pbSdap.Status_STATUS_ERROR
 	}
 
 	usersCollection := db.Collection("users")
-
-	// TODO get more or less user fields depending on user's sdap_role
 
 	filter := bson.M{"username": username, "password": password}
 	var userBson bson.M

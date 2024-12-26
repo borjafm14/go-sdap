@@ -10,6 +10,7 @@ import "google/protobuf/empty.proto";
 
 service Management {
     rpc Connect(SessionRequest) returns (SessionResponse) {}
+    rpc Authenticate(AuthenticateRequest) returns (AuthenticateResponse) {}
     rpc GetUser (UserRequest) returns (UserResponse) {}
     rpc ListUsers (ListUsersRequest) returns (ListUsersResponse) {}
     rpc ModifyUsers(ModifyUsersRequest) returns (ModifyUsersResponse) {}
@@ -17,6 +18,16 @@ service Management {
     rpc ChangeUsername(UsernameRequest) returns (UsernameResponse) {}
     rpc DeleteUsers(DeleteUsersRequest) returns (DeleteUsersResponse) {}
     rpc Disconnect(DisconnectRequest) returns (google.protobuf.Empty) {}
+}
+
+message AuthenticateRequest {
+    string token = 1;
+    string username = 2;
+    string password = 3;
+}
+
+message AuthenticateResponse {
+    Status status = 1;
 }
 
 message UsernameRequest {

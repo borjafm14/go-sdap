@@ -14,12 +14,14 @@ type operationServer struct {
 	pb.UnimplementedOperationServer
 	logger *slog.Logger
 	db     *dbManager.DbManager
+	sm     *sessionManager.SessionManager
 }
 
 func New(logger *slog.Logger, db *dbManager.DbManager, sm *sessionManager.SessionManager) *operationServer {
 	return &operationServer{
 		logger: logger,
 		db:     db,
+		sm:     sm,
 	}
 }
 
@@ -27,15 +29,35 @@ func (s *operationServer) Connect(ctx context.Context, in *pb.SessionRequest) (*
 	logger := s.logger.With("RPC", "Connect")
 	logger.Info("Incoming request", "req", in)
 
+	status := pb.Status_STATUS_OK
+	token, err := s.sm.CreateSession(in.Hostname)
+
+	if err != nil {
+		status = pb.Status_STATUS_ERROR
+	}
+
 	return &pb.SessionResponse{
-		Token:  "1234",
-		Status: pb.Status_STATUS_OK,
+		Token:  token,
+		Status: status,
 	}, nil
 }
 
 func (s *operationServer) Authenticate(ctx context.Context, in *pb.AuthenticateRequest) (*pb.AuthenticateResponse, error) {
 	logger := s.logger.With("RPC", "Authenticate")
 	logger.Info("Incoming request", "req", in)
+
+	if !s.sm.SessionExists(in.Token) {
+		return &pb.AuthenticateResponse{
+			Status: pb.Status_STATUS_ERROR,
+		}, nil
+	}
+
+	if s.sm.IsAuthenticated(in.Token) {
+		logger.Info("User already authenticated", "username", in.Username)
+		return &pb.AuthenticateResponse{
+			Status: pb.Status_STATUS_OK,
+		}, nil
+	}
 
 	if s.db == nil {
 		return &pb.AuthenticateResponse{
@@ -56,6 +78,14 @@ func (s *operationServer) ChangePassword(ctx context.Context, in *pb.ChangePassw
 	logger := s.logger.With("RPC", "ChangePassword")
 	logger.Info("Incoming request", "req", in)
 
+	if !s.sm.SessionExists(in.Token) || !s.sm.IsAuthenticated(in.Token) {
+		return &pb.ChangePasswordResponse{
+			Status: pb.Status_STATUS_ERROR,
+		}, nil
+	}
+
+	s.sm.UpdateSessionTimestamp(in.Token)
+
 	if s.db == nil {
 		return &pb.ChangePasswordResponse{
 			Status: pb.Status_STATUS_ERROR,
@@ -72,6 +102,15 @@ func (s *operationServer) ChangePassword(ctx context.Context, in *pb.ChangePassw
 func (s *operationServer) GetCharacteristics(ctx context.Context, in *pb.CharacteristicsRequest) (*pb.CharacteristicsResponse, error) {
 	logger := s.logger.With("RPC", "GetCharacteristics")
 	logger.Info("Incoming request", "req", in)
+
+	if !s.sm.SessionExists(in.Token) || !s.sm.IsAuthenticated(in.Token) {
+		return &pb.CharacteristicsResponse{
+			User:   nil,
+			Status: pb.Status_STATUS_ERROR,
+		}, nil
+	}
+
+	s.sm.UpdateSessionTimestamp(in.Token)
 
 	if s.db == nil {
 		return &pb.CharacteristicsResponse{
@@ -92,6 +131,15 @@ func (s *operationServer) GetMemberOf(ctx context.Context, in *pb.MemberOfReques
 	logger := s.logger.With("RPC", "GetMemberOf")
 	logger.Info("Incoming request", "req", in)
 
+	if !s.sm.SessionExists(in.Token) || !s.sm.IsAuthenticated(in.Token) {
+		return &pb.MemberOfResponse{
+			MemberOf: nil,
+			Status:   pb.Status_STATUS_ERROR,
+		}, nil
+	}
+
+	s.sm.UpdateSessionTimestamp(in.Token)
+
 	if s.db == nil {
 		return &pb.MemberOfResponse{
 			MemberOf: nil,
@@ -110,6 +158,12 @@ func (s *operationServer) GetMemberOf(ctx context.Context, in *pb.MemberOfReques
 func (s *operationServer) Disconnect(ctx context.Context, in *pb.DisconnectRequest) (*emptypb.Empty, error) {
 	logger := s.logger.With("RPC", "Disconnect")
 	logger.Info("Incoming request", "req", in)
+
+	if !s.sm.SessionExists(in.Token) || !s.sm.IsAuthenticated(in.Token) {
+		return &emptypb.Empty{}, nil
+	}
+
+	s.sm.DeleteSession(in.Token)
 
 	return &emptypb.Empty{}, nil
 }

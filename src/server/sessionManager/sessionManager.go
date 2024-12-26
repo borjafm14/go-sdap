@@ -4,10 +4,13 @@ import (
 	"log/slog"
 	"sync"
 	"time"
+
+	"go-sdap/src/server/helper"
 )
 
 type Session struct {
-	Username      string
+	Hostname      string
+	Username      *string
 	Token         string
 	Authenticated bool
 	Timestamp     time.Time
@@ -35,16 +38,34 @@ func New(logger *slog.Logger) *SessionManager {
 	return sm
 }
 
-func (sm *SessionManager) CreateSession(username, token string, authenticated bool) {
+func (sm *SessionManager) CreateSession(hostname string) (string, error) {
+	token := helper.GenerateToken()
+
+	// check that token is unique
+	for {
+		sm.mu.Lock()
+		_, exists := sm.sessions[token]
+		sm.mu.Unlock()
+
+		if exists {
+			token = helper.GenerateToken()
+		} else {
+			break
+		}
+	}
+
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
 	sm.sessions[token] = &Session{
-		Username:      username,
+		Hostname:      hostname,
+		Username:      nil,
 		Token:         token,
-		Authenticated: authenticated,
+		Authenticated: false,
 		Timestamp:     time.Now(),
 	}
-	sm.logger.Info("Session created", "username", username, "token", token)
+	sm.logger.Info("Session created", "hostname", hostname, "token", token)
+
+	return token, nil
 }
 
 func (sm *SessionManager) GetSession(token string) (*Session, bool) {
@@ -52,6 +73,40 @@ func (sm *SessionManager) GetSession(token string) (*Session, bool) {
 	defer sm.mu.Unlock()
 	session, exists := sm.sessions[token]
 	return session, exists
+}
+
+func (sm *SessionManager) SessionExists(token string) bool {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+	_, exists := sm.sessions[token]
+	return exists
+}
+
+func (sm *SessionManager) IsAuthenticated(token string) bool {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+	if session, exists := sm.sessions[token]; exists {
+		return session.Username != nil && session.Authenticated
+	}
+	return false
+}
+
+func (sm *SessionManager) SetAuthenticated(token string, username string) {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+	if session, exists := sm.sessions[token]; exists {
+		session.Username = &username
+		session.Authenticated = true
+		session.Timestamp = time.Now()
+		sm.logger.Info("Session authenticated", "token", token, "username", username)
+	}
+}
+
+func (sm *SessionManager) DeleteSession(token string) {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+	delete(sm.sessions, token)
+	sm.logger.Info("Session deleted", "token", token)
 }
 
 func (sm *SessionManager) UpdateSessionTimestamp(token string) {
