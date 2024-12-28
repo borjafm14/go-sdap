@@ -40,6 +40,45 @@ func New(logger *slog.Logger) *DbManager {
 	}
 }
 
+func (d *DbManager) CreateAdminUser() {
+	if db == nil {
+		return
+	}
+
+	usersCollection := db.Collection("users")
+
+	filter := bson.M{"username": "admin"}
+	count, err := usersCollection.CountDocuments(ctx, filter)
+	if err != nil {
+		d.logger.Error("Error checking for admin user", "error", err)
+		return
+	}
+
+	if count == 0 {
+		// Create admin user if it doesn't exist
+		admin := &pbManagement.User{
+			Username:  helper.StringPtr("admin"),
+			FirstName: helper.StringPtr("Admin"),
+			LastName:  helper.StringPtr("Admin"),
+			Password:  helper.StringPtr(helper.GeneratePassword()),
+		}
+
+		bsonDoc, err := helper.ProtoToBSON(admin)
+		if err != nil {
+			d.logger.Error("Error converting admin user to bson", "error", err)
+			return
+		}
+
+		_, err = usersCollection.InsertOne(ctx, bsonDoc)
+		if err != nil {
+			d.logger.Error("Error inserting admin user to database", "error", err)
+			return
+		}
+
+		d.logger.Info("Admin user created successfully")
+	}
+}
+
 func (d *DbManager) DeleteUsers(usernames []string) pbManagement.Status {
 	if db == nil {
 		return pbManagement.Status_STATUS_ERROR
@@ -158,6 +197,31 @@ func (d *DbManager) AddUsers(users []*pbManagement.User) pbManagement.Status {
 		return pbManagement.Status_STATUS_ERROR
 	}
 
+	return pbManagement.Status_STATUS_OK
+}
+
+func (d *DbManager) ChangeAdminPassword(old_password string, new_password string) pbManagement.Status {
+	if db == nil {
+		return pbManagement.Status_STATUS_ERROR
+	}
+
+	usersCollection := db.Collection("users")
+
+	filter := bson.M{"username": "admin", "password": old_password}
+	update := bson.M{"$set": bson.M{"password": new_password}}
+
+	result, err := usersCollection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		d.logger.Error("Error updating password in database", "error", err)
+		return pbManagement.Status_STATUS_ERROR
+	}
+
+	if result.ModifiedCount == 0 {
+		d.logger.Warn("Password not updated, old password is incorrect")
+		return pbManagement.Status_STATUS_ERROR
+	}
+
+	d.logger.Info("Password updated successfully")
 	return pbManagement.Status_STATUS_OK
 }
 

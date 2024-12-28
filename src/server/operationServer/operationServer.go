@@ -52,6 +52,13 @@ func (s *operationServer) Authenticate(ctx context.Context, in *pb.AuthenticateR
 		}, nil
 	}
 
+	if in.Username == "admin" {
+		logger.Warn("Admin user cannot be authenticated")
+		return &pb.AuthenticateResponse{
+			Status: pb.Status_STATUS_ERROR,
+		}, nil
+	}
+
 	if s.sm.IsAuthenticated(in.Token) {
 		logger.Info("User already authenticated", "username", in.Username)
 		return &pb.AuthenticateResponse{
@@ -84,6 +91,13 @@ func (s *operationServer) ChangePassword(ctx context.Context, in *pb.ChangePassw
 		}, nil
 	}
 
+	if in.Username == "admin" {
+		logger.Warn("Admin user cannot change password in operation server")
+		return &pb.ChangePasswordResponse{
+			Status: pb.Status_STATUS_ERROR,
+		}, nil
+	}
+
 	s.sm.UpdateSessionTimestamp(in.Token)
 
 	if s.db == nil {
@@ -104,6 +118,14 @@ func (s *operationServer) GetCharacteristics(ctx context.Context, in *pb.Charact
 	logger.Info("Incoming request", "req", in)
 
 	if !s.sm.SessionExists(in.Token) || !s.sm.IsAuthenticated(in.Token) {
+		return &pb.CharacteristicsResponse{
+			User:   nil,
+			Status: pb.Status_STATUS_ERROR,
+		}, nil
+	}
+
+	if in.Username == "admin" {
+		logger.Warn("Admin user cannot be retrieved")
 		return &pb.CharacteristicsResponse{
 			User:   nil,
 			Status: pb.Status_STATUS_ERROR,
@@ -132,6 +154,14 @@ func (s *operationServer) GetMemberOf(ctx context.Context, in *pb.MemberOfReques
 	logger.Info("Incoming request", "req", in)
 
 	if !s.sm.SessionExists(in.Token) || !s.sm.IsAuthenticated(in.Token) {
+		return &pb.MemberOfResponse{
+			MemberOf: nil,
+			Status:   pb.Status_STATUS_ERROR,
+		}, nil
+	}
+
+	if in.Username == "admin" {
+		logger.Warn("Admin user cannot be retrieved")
 		return &pb.MemberOfResponse{
 			MemberOf: nil,
 			Status:   pb.Status_STATUS_ERROR,

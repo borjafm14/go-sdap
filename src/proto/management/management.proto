@@ -16,8 +16,20 @@ service Management {
     rpc ModifyUsers(ModifyUsersRequest) returns (ModifyUsersResponse) {}
     rpc AddUsers(AddUsersRequest) returns (AddUsersResponse) {}
     rpc ChangeUsername(UsernameRequest) returns (UsernameResponse) {}
+    rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse) {}
     rpc DeleteUsers(DeleteUsersRequest) returns (DeleteUsersResponse) {}
     rpc Disconnect(DisconnectRequest) returns (google.protobuf.Empty) {}
+}
+
+message ChangePasswordRequest {
+    string token = 1;
+    string username = 2;
+    string old_password = 3;
+    string new_password = 4;
+}
+
+message ChangePasswordResponse {
+    Status status = 1;
 }
 
 message AuthenticateRequest {

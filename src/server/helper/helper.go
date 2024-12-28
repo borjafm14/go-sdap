@@ -177,6 +177,10 @@ func GenerateToken() string {
 	return fmt.Sprintf("%x", token)
 }
 
+func StringPtr(s string) *string {
+	return &s
+}
+
 func ProtoToBSON(pb proto.Message) (bson.M, error) {
 	protoJSON, err := protojson.Marshal(pb)
 	if err != nil {

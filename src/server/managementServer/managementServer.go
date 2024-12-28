@@ -4,6 +4,7 @@ import (
 	"context"
 	pb "go-sdap/src/proto/management"
 	"go-sdap/src/server/dbManager"
+	"go-sdap/src/server/helper"
 	"go-sdap/src/server/sessionManager"
 	"log/slog"
 
@@ -18,6 +19,12 @@ type managementServer struct {
 }
 
 func New(logger *slog.Logger, db *dbManager.DbManager, sm *sessionManager.SessionManager) *managementServer {
+
+	if db != nil {
+		// Create admin user if it doesn't exist
+		db.CreateAdminUser()
+	}
+
 	return &managementServer{
 		logger: logger,
 		db:     db,
@@ -86,6 +93,14 @@ func (s *managementServer) GetUser(ctx context.Context, in *pb.UserRequest) (*pb
 		}, nil
 	}
 
+	if in.Username == "admin" {
+		logger.Warn("Admin user cannot be retrieved")
+		return &pb.UserResponse{
+			User:   nil,
+			Status: pb.Status_STATUS_ERROR,
+		}, nil
+	}
+
 	s.sm.UpdateSessionTimestamp(in.Token)
 
 	if s.db == nil {
@@ -108,6 +123,14 @@ func (s *managementServer) ListUsers(ctx context.Context, in *pb.ListUsersReques
 	logger.Info("Incoming request", "req", in)
 
 	if !s.sm.SessionExists(in.Token) || !s.sm.IsAuthenticated(in.Token) {
+		return &pb.ListUsersResponse{
+			Users:  nil,
+			Status: pb.Status_STATUS_ERROR,
+		}, nil
+	}
+
+	if in.Username == helper.StringPtr("admin") {
+		logger.Warn("Admin user cannot be listed")
 		return &pb.ListUsersResponse{
 			Users:  nil,
 			Status: pb.Status_STATUS_ERROR,
@@ -141,6 +164,17 @@ func (s *managementServer) ModifyUsers(ctx context.Context, in *pb.ModifyUsersRe
 		}, nil
 	}
 
+	if len(in.Usernames) > 0 {
+		for _, username := range in.Usernames {
+			if username == "admin" {
+				logger.Warn("Admin user cannot be modified")
+				return &pb.ModifyUsersResponse{
+					Status: pb.Status_STATUS_ERROR,
+				}, nil
+			}
+		}
+	}
+
 	s.sm.UpdateSessionTimestamp(in.Token)
 
 	if s.db == nil {
@@ -166,6 +200,13 @@ func (s *managementServer) ChangeUsername(ctx context.Context, in *pb.UsernameRe
 		}, nil
 	}
 
+	if in.OldUsername == "admin" || in.NewUsername == "admin" {
+		logger.Warn("Admin user cannot be modified")
+		return &pb.UsernameResponse{
+			Status: pb.Status_STATUS_ERROR,
+		}, nil
+	}
+
 	s.sm.UpdateSessionTimestamp(in.Token)
 
 	if s.db == nil {
@@ -181,6 +222,38 @@ func (s *managementServer) ChangeUsername(ctx context.Context, in *pb.UsernameRe
 	}, nil
 }
 
+func (s *managementServer) ChangePassword(ctx context.Context, in *pb.ChangePasswordRequest) (*pb.ChangePasswordResponse, error) {
+	logger := s.logger.With("RPC", "ChangePassword")
+	logger.Info("Incoming request", "req", in)
+
+	if !s.sm.SessionExists(in.Token) || !s.sm.IsAuthenticated(in.Token) {
+		return &pb.ChangePasswordResponse{
+			Status: pb.Status_STATUS_ERROR,
+		}, nil
+	}
+
+	if in.Username != "admin" {
+		logger.Warn("Only admin's password can be changed")
+		return &pb.ChangePasswordResponse{
+			Status: pb.Status_STATUS_ERROR,
+		}, nil
+	}
+
+	s.sm.UpdateSessionTimestamp(in.Token)
+
+	if s.db == nil {
+		return &pb.ChangePasswordResponse{
+			Status: pb.Status_STATUS_ERROR,
+		}, nil
+	}
+
+	status := s.db.ChangeAdminPassword(in.OldPassword, in.NewPassword)
+
+	return &pb.ChangePasswordResponse{
+		Status: status,
+	}, nil
+}
+
 func (s *managementServer) AddUsers(ctx context.Context, in *pb.AddUsersRequest) (*pb.AddUsersResponse, error) {
 	logger := s.logger.With("RPC", "AddUsers")
 	logger.Info("Incoming request", "req", in)
@@ -189,6 +262,17 @@ func (s *managementServer) AddUsers(ctx context.Context, in *pb.AddUsersRequest)
 		return &pb.AddUsersResponse{
 			Status: pb.Status_STATUS_ERROR,
 		}, nil
+	}
+
+	if len(in.Users) > 0 {
+		for _, user := range in.Users {
+			if user.Username == helper.StringPtr("admin") {
+				logger.Warn("Admin user cannot be added")
+				return &pb.AddUsersResponse{
+					Status: pb.Status_STATUS_ERROR,
+				}, nil
+			}
+		}
 	}
 
 	s.sm.UpdateSessionTimestamp(in.Token)
@@ -214,6 +298,17 @@ func (s *managementServer) DeleteUsers(ctx context.Context, in *pb.DeleteUsersRe
 		return &pb.DeleteUsersResponse{
 			Status: pb.Status_STATUS_ERROR,
 		}, nil
+	}
+
+	if len(in.Usernames) > 0 {
+		for _, username := range in.Usernames {
+			if username == "admin" {
+				logger.Warn("Admin user cannot be deleted")
+				return &pb.DeleteUsersResponse{
+					Status: pb.Status_STATUS_ERROR,
+				}, nil
+			}
+		}
 	}
 
 	s.sm.UpdateSessionTimestamp(in.Token)

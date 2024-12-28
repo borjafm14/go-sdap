@@ -27,6 +27,7 @@ const (
 	Management_ModifyUsers_FullMethodName    = "/management.Management/ModifyUsers"
 	Management_AddUsers_FullMethodName       = "/management.Management/AddUsers"
 	Management_ChangeUsername_FullMethodName = "/management.Management/ChangeUsername"
+	Management_ChangePassword_FullMethodName = "/management.Management/ChangePassword"
 	Management_DeleteUsers_FullMethodName    = "/management.Management/DeleteUsers"
 	Management_Disconnect_FullMethodName     = "/management.Management/Disconnect"
 )
@@ -42,6 +43,7 @@ type ManagementClient interface {
 	ModifyUsers(ctx context.Context, in *ModifyUsersRequest, opts ...grpc.CallOption) (*ModifyUsersResponse, error)
 	AddUsers(ctx context.Context, in *AddUsersRequest, opts ...grpc.CallOption) (*AddUsersResponse, error)
 	ChangeUsername(ctx context.Context, in *UsernameRequest, opts ...grpc.CallOption) (*UsernameResponse, error)
+	ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*ChangePasswordResponse, error)
 	DeleteUsers(ctx context.Context, in *DeleteUsersRequest, opts ...grpc.CallOption) (*DeleteUsersResponse, error)
 	Disconnect(ctx context.Context, in *DisconnectRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
@@ -124,6 +126,16 @@ func (c *managementClient) ChangeUsername(ctx context.Context, in *UsernameReque
 	return out, nil
 }
 
+func (c *managementClient) ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*ChangePasswordResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ChangePasswordResponse)
+	err := c.cc.Invoke(ctx, Management_ChangePassword_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *managementClient) DeleteUsers(ctx context.Context, in *DeleteUsersRequest, opts ...grpc.CallOption) (*DeleteUsersResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DeleteUsersResponse)
@@ -155,6 +167,7 @@ type ManagementServer interface {
 	ModifyUsers(context.Context, *ModifyUsersRequest) (*ModifyUsersResponse, error)
 	AddUsers(context.Context, *AddUsersRequest) (*AddUsersResponse, error)
 	ChangeUsername(context.Context, *UsernameRequest) (*UsernameResponse, error)
+	ChangePassword(context.Context, *ChangePasswordRequest) (*ChangePasswordResponse, error)
 	DeleteUsers(context.Context, *DeleteUsersRequest) (*DeleteUsersResponse, error)
 	Disconnect(context.Context, *DisconnectRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedManagementServer()
@@ -187,6 +200,9 @@ func (UnimplementedManagementServer) AddUsers(context.Context, *AddUsersRequest)
 }
 func (UnimplementedManagementServer) ChangeUsername(context.Context, *UsernameRequest) (*UsernameResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ChangeUsername not implemented")
+}
+func (UnimplementedManagementServer) ChangePassword(context.Context, *ChangePasswordRequest) (*ChangePasswordResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ChangePassword not implemented")
 }
 func (UnimplementedManagementServer) DeleteUsers(context.Context, *DeleteUsersRequest) (*DeleteUsersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteUsers not implemented")
@@ -341,6 +357,24 @@ func _Management_ChangeUsername_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Management_ChangePassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ChangePasswordRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ManagementServer).ChangePassword(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Management_ChangePassword_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ManagementServer).ChangePassword(ctx, req.(*ChangePasswordRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Management_DeleteUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteUsersRequest)
 	if err := dec(in); err != nil {
@@ -411,6 +445,10 @@ var Management_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ChangeUsername",
 			Handler:    _Management_ChangeUsername_Handler,
+		},
+		{
+			MethodName: "ChangePassword",
+			Handler:    _Management_ChangePassword_Handler,
 		},
 		{
 			MethodName: "DeleteUsers",
