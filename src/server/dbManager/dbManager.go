@@ -330,6 +330,11 @@ func (d *DbManager) ListUsers(username *string, filters []*pbManagement.Filter) 
 			continue
 		}
 
+		if filter.Characteristic == pbManagement.Characteristic_USERNAME && filter.Value == "admin" {
+			d.logger.Warn("Admin user cannot be listed")
+			continue
+		}
+
 		fieldName, err := helper.ManagementCharacteristicToJSON(filter.Characteristic)
 		if err != nil {
 			d.logger.Error("Unknown characteristic in filter", "characteristic", filter.Characteristic)
@@ -368,6 +373,11 @@ func (d *DbManager) ListUsers(username *string, filters []*pbManagement.Filter) 
 			continue
 		}
 
+		if user.Username != nil && user.Username == helper.StringPtr("admin") {
+			d.logger.Warn("Admin user cannot be listed")
+			continue
+		}
+
 		users = append(users, user)
 	}
 
@@ -382,6 +392,11 @@ func (d *DbManager) ModifyUsers(usernames []string, filters []*pbManagement.Filt
 	updateFields := bson.M{}
 	for _, filter := range filters {
 		if filter == nil {
+			continue
+		}
+
+		if filter.Characteristic == pbManagement.Characteristic_USERNAME && filter.Value == "admin" {
+			d.logger.Warn("Admin user cannot be modified")
 			continue
 		}
 
