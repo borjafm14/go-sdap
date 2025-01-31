@@ -1,0 +1,11 @@
+services:
+  go-app:
+    image: ubuntu-ldap
+    volumes:
+      - C:/Users/borja/repos/go-sdap:/app
+      - C:/Users/borja/data/mongodb:/data/db
+    working_dir: /app
+    ports:
+      - "27017:27017"
+      - "50051:50051"
+    command: bash -c "mongod --dbpath /data/db --bind_ip_all & tail -f /dev/null"

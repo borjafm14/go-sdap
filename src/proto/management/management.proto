@@ -1,0 +1,157 @@
+syntax = "proto3";
+
+package management;
+option go_package = "go-sdap/management";
+
+import "google/protobuf/empty.proto";
+
+// protoc --proto_path=src/proto/management --go_out=src/proto/management --go_opt=paths=source_relative
+// --go-grpc_out=src/proto/management --go-grpc_opt=paths=source_relative management.proto
+
+service Management {
+    rpc Connect(SessionRequest) returns (SessionResponse) {}
+    rpc Authenticate(AuthenticateRequest) returns (AuthenticateResponse) {}
+    rpc GetUser (UserRequest) returns (UserResponse) {}
+    rpc ListUsers (ListUsersRequest) returns (ListUsersResponse) {}
+    rpc ModifyUsers(ModifyUsersRequest) returns (ModifyUsersResponse) {}
+    rpc AddUsers(AddUsersRequest) returns (AddUsersResponse) {}
+    rpc ChangeUsername(UsernameRequest) returns (UsernameResponse) {}
+    rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse) {}
+    rpc DeleteUsers(DeleteUsersRequest) returns (DeleteUsersResponse) {}
+    rpc Disconnect(DisconnectRequest) returns (google.protobuf.Empty) {}
+}
+
+message ChangePasswordRequest {
+    string token = 1;
+    string username = 2;
+    string old_password = 3;
+    string new_password = 4;
+}
+
+message ChangePasswordResponse {
+    Status status = 1;
+}
+
+message AuthenticateRequest {
+    string token = 1;
+    string username = 2;
+    string password = 3;
+}
+
+message AuthenticateResponse {
+    Status status = 1;
+}
+
+message UsernameRequest {
+    string token = 1;
+    string old_username = 2;
+    string new_username = 3;
+}
+
+message UsernameResponse {
+    Status status = 1;
+}
+
+message DisconnectRequest {
+    string token = 1;
+}
+
+message SessionRequest {
+    string hostname = 1;
+}
+
+message SessionResponse {
+    string token = 1;
+    Status status = 2;
+}
+
+enum Status {
+    STATUS_OK = 0;
+    STATUS_ERROR = 1;
+    STATUS_USER_NOT_FOUND = 2;
+}
+
+enum Characteristic {
+    COMMON_NAME = 0;
+    FIRST_NAME = 1;
+    LAST_NAME = 2;
+    EMPLOYEE_NUMBER = 3;
+    PHONE_NUMBER = 4;
+    ADDRESS = 5;
+    COMPANY_ROLE = 6;
+    TEAM = 7;
+    REPORTS_TO = 8;
+    OTHER = 9;
+    MEMBER_OF = 10;
+    USERNAME = 11;
+}
+
+message User {
+    optional string username = 1;
+    optional string password = 2;
+    optional string common_name = 3;
+    optional string first_name = 4;
+    optional string last_name = 5;
+    optional string employee_number = 6;
+    optional string phone_number = 7;
+    optional string address = 8;
+    optional string company_role = 9;
+    optional string team = 10;
+    optional string reports_to = 11;
+    map<string, string> other_characteristics = 12;
+    repeated string member_of = 13;
+}
+
+message UserRequest {
+    string token = 1;
+    string username = 2;
+}
+
+message UserResponse {
+    optional User user = 1;
+    Status status = 2;
+}
+
+message DeleteUsersResponse {
+    Status status = 1;
+}
+
+message AddUsersRequest {
+    string token = 1;
+    repeated User users = 2;
+}
+
+message AddUsersResponse {
+    Status status = 2;
+}
+
+message DeleteUsersRequest {
+    string token = 1;
+    repeated string usernames = 2;
+}
+
+message ModifyUsersRequest {
+    string token = 1;
+    repeated string usernames = 2;
+    repeated Filter filter = 3;
+}
+
+message ModifyUsersResponse {
+    Status status = 1;
+}
+
+message ListUsersRequest {
+    string token = 1;
+    optional string username = 2;
+    repeated Filter filter = 3;
+}
+
+message Filter {
+    Characteristic characteristic = 1;
+    string value = 2;
+}
+
+message ListUsersResponse {
+    repeated User users = 1;
+    Status status = 2;
+}

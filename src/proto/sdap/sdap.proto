@@ -1,0 +1,110 @@
+syntax = "proto3";
+
+package sdap;
+option go_package = "go-sdap/sdap";
+
+import "google/protobuf/empty.proto";
+
+//protoc --proto_path=src/proto/sdap --go_out=src/proto/sdap --go_opt=paths=source_relative
+// --go-grpc_out=src/proto/sdap --go-grpc_opt=paths=source_relative sdap.proto
+
+service Operation {
+    rpc Connect(SessionRequest) returns (SessionResponse) {}
+    rpc Authenticate(AuthenticateRequest) returns (AuthenticateResponse) {}
+    rpc GetCharacteristics(CharacteristicsRequest) returns (CharacteristicsResponse) {}
+    rpc GetMemberOf(MemberOfRequest) returns (MemberOfResponse) {}
+    rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse) {}
+    rpc Disconnect(DisconnectRequest) returns (google.protobuf.Empty) {}
+}
+
+message ChangePasswordRequest {
+    string token = 1;
+    string username = 2;
+    string old_password = 3;
+    string new_password = 4;
+}
+
+message ChangePasswordResponse {
+    Status status = 1;
+}
+
+message AuthenticateRequest {
+    string token = 1;
+    string username = 2;
+    string password = 3;
+}
+
+message AuthenticateResponse {
+    User user = 1;
+    Status status = 2;
+}
+
+message CharacteristicsRequest {
+    string token = 1;
+    string username = 2;
+    repeated Characteristic characteristics = 3;
+}
+
+message CharacteristicsResponse {
+    User user = 1;
+    Status status = 2;
+}
+
+message MemberOfRequest {
+    string token = 1;
+    string username = 2;
+}
+
+message MemberOfResponse {
+    repeated string memberOf = 1;
+    Status status = 2;
+}
+
+message DisconnectRequest {
+    string token = 1;
+}
+
+message SessionRequest {
+    string hostname = 1;
+}
+
+message SessionResponse {
+    string token = 1;
+    Status status = 2;
+}
+
+enum Status {
+    STATUS_OK = 0;
+    STATUS_ERROR = 1;
+    STATUS_USER_NOT_FOUND = 2;
+}
+
+enum Characteristic {
+    COMMON_NAME = 0;
+    FIRST_NAME = 1;
+    LAST_NAME = 2;
+    EMPLOYEE_NUMBER = 3;
+    PHONE_NUMBER = 4;
+    ADDRESS = 5;
+    COMPANY_ROLE = 6;
+    TEAM = 7;
+    REPORTS_TO = 8;
+    OTHER = 9;
+    MEMBER_OF = 10;
+}
+
+message User {
+    string username = 1;
+    optional string password = 2;
+    optional string common_name = 3;
+    optional string first_name = 4;
+    optional string last_name = 5;
+    optional string employee_number = 6;
+    optional string phone_number = 7;
+    optional string address = 8;
+    optional string company_role = 9;
+    optional string team = 10;
+    optional string reports_to = 11;
+    map<string, string> other_characteristics = 12;
+    repeated string member_of = 13;
+}
