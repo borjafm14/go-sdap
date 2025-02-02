@@ -1,5 +1,5 @@
 import { grpc } from '@improbable-eng/grpc-web';
-import { managementService } from '../proto/management_pb_service';
+import { managementService } from '../management/management_pb_service';
 import { SessionRequest, AuthenticateRequest, ListUsersRequest, AddUsersRequest, DeleteUsersRequest } from '../proto/management_pb';
 
 const MANAGEMENT_SERVER_URL = 'http://localhost:50052'; // Update with your management server URL
